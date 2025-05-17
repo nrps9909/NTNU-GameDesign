@@ -60,6 +60,11 @@ void ImGuiManager::render()
 
 void ImGuiManager::cleanup()
 {
+	// Check if ImGui is already cleaned up
+	ImGuiContext* context = ImGui::GetCurrentContext();
+	if (!context)
+		return;
+
 	// Cleanup ImGui
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

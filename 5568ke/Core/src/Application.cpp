@@ -376,6 +376,9 @@ void Application::cleanup_()
 	// Clean up scene resources
 	scene_.cleanup();
 
+	// Clean up renderer (add this)
+	Renderer::getInstance().cleanup();
+
 	// Clean up GLFW
 	glfwDestroyWindow(window_);
 	glfwTerminate();
