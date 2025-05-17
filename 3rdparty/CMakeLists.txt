@@ -12,5 +12,8 @@ set(IMFD_DIR ${THIRD_DIR}/ImGuiFileDialog)
 
 add_subdirectory(glfw)
 add_subdirectory(glad)
+add_subdirectory(glm)
 add_subdirectory(imgui)
 add_subdirectory(implot)
+add_subdirectory(ImGuiFileDialog)
+add_subdirectory(tinygltf)
