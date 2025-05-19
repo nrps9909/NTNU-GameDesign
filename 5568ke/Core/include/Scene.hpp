@@ -7,6 +7,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include "BoundingBox.hpp"
 #include "include_5568ke.hpp"
 
 class Model;
@@ -23,6 +24,7 @@ struct Light {
 struct Entity {
 	std::shared_ptr<Model> model;
 	glm::mat4 transform;
+	BoundingBox worldBoundingBox;
 	float scale{1.0f};
 
 	// Additional entity properties
@@ -47,6 +49,11 @@ public:
 	// Cached matrices
 	glm::mat4 view{1.0f};
 	glm::mat4 proj{1.0f};
+
+	// For camera update
+	bool firstMouse{true};
+	double lastX;
+	double lastY;
 };
 
 class Scene {
