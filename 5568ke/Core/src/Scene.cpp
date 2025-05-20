@@ -2,9 +2,11 @@
 
 #include "Scene.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include <iostream>
+#include <ranges>
+
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "BoundingBox.hpp"
 #include "GlobalAnimationState.hpp"
@@ -84,6 +86,12 @@ void Camera::lookAt(glm::vec3 const& position, glm::vec3 const& target)
 	view = glm::lookAt(pos, pos + front, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
+Scene& Scene::getInstance()
+{
+	static Scene instance;
+	return instance;
+}
+
 // Scene methods implementation for camera setup
 void Scene::setupCameraToViewScene(float padding)
 {
@@ -93,103 +101,101 @@ void Scene::setupCameraToViewScene(float padding)
 	}
 
 	// Find the global bounds of all entities
-	BoundingBox globalBounds;
-	globalBounds.min = glm::vec3(std::numeric_limits<float>::max());
-	globalBounds.max = glm::vec3(std::numeric_limits<float>::lowest());
+	BoundingBox worldBounds;
+	worldBounds.min = glm::vec3(std::numeric_limits<float>::max());
+	worldBounds.max = glm::vec3(std::numeric_limits<float>::lowest());
 
 	for (Entity const& entity : ents) {
 		if (!entity.visible || !entity.model)
 			continue;
 
-		// Transform the model's bounding box by the entity transform
-		BoundingBox modelBounds = entity.model->localSpaceBBox;
-		glm::mat4 worldM = entity.transform * glm::scale(glm::mat4(1.0f), glm::vec3(entity.scale));
+		BoundingBox local = entity.model->localSpaceBBox;
 
+		// 8 corner
 		glm::vec3 corners[8] = {
-				glm::vec3(modelBounds.min.x, modelBounds.min.y, modelBounds.min.z), glm::vec3(modelBounds.max.x, modelBounds.min.y, modelBounds.min.z),
-				glm::vec3(modelBounds.min.x, modelBounds.max.y, modelBounds.min.z), glm::vec3(modelBounds.max.x, modelBounds.max.y, modelBounds.min.z),
-				glm::vec3(modelBounds.min.x, modelBounds.min.y, modelBounds.max.z), glm::vec3(modelBounds.max.x, modelBounds.min.y, modelBounds.max.z),
-				glm::vec3(modelBounds.min.x, modelBounds.max.y, modelBounds.max.z), glm::vec3(modelBounds.max.x, modelBounds.max.y, modelBounds.max.z)};
+				{local.min.x, local.min.y, local.min.z}, {local.max.x, local.min.y, local.min.z}, {local.min.x, local.max.y, local.min.z},
+				{local.max.x, local.max.y, local.min.z}, {local.min.x, local.min.y, local.max.z}, {local.max.x, local.min.y, local.max.z},
+				{local.min.x, local.max.y, local.max.z}, {local.max.x, local.max.y, local.max.z},
+		};
 
-		// Transform each corner and expand global bounds
-		for (int i = 0; i < 8; i++) {
-			glm::vec4 transformedCorner = worldM * glm::vec4(corners[i], 1.0f);
-			glm::vec3 worldPos = glm::vec3(transformedCorner) / transformedCorner.w;
+		glm::mat4 toWorldMatrix = entity.transform; // Model matrix of MVP transformation
 
-			globalBounds.min = glm::min(globalBounds.min, worldPos);
-			globalBounds.max = glm::max(globalBounds.max, worldPos);
+		for (glm::vec3 c : corners) {
+			glm::vec3 wp = glm::vec3(toWorldMatrix * glm::vec4(c, 1.0f));
+			worldBounds.min = glm::min(worldBounds.min, wp);
+			worldBounds.max = glm::max(worldBounds.max, wp);
 		}
 	}
 
 	// Calculate scene center and bounding radius
-	glm::vec3 center = (globalBounds.min + globalBounds.max) * 0.5f;
-	glm::vec3 size = globalBounds.max - globalBounds.min;
+	glm::vec3 worldCenter = (worldBounds.min + worldBounds.max) * 0.5f;
+	glm::vec3 size = worldBounds.max - worldBounds.min;
 	float radius = std::max({size.x, size.y, size.z}) * 0.5f * padding;
 
 	// Position camera so the entire scene fits the view frustum
 	float fov = glm::radians(45.0f);
 	float distance = radius / std::tan(fov * 0.5f);
-	glm::vec3 cameraPos = center + glm::vec3(0.0f, radius * 0.1f, distance);
+	glm::vec3 cameraPos = worldCenter + glm::vec3(0.0f, radius * 0.1f, distance);
 
 	// Set camera to look at the center of the scene
-	cam.lookAt(cameraPos, center);
+	cam.lookAt(cameraPos, worldCenter);
 }
 
-void Scene::setupCameraToViewEntity(std::string const& entityName, float distance)
+void Scene::setupCameraToViewEntity(std::string const& entityName, float padding)
 {
-	Entity* entity = findEntity(entityName);
-	if (!entity || !entity->model) {
-		// Fall back to viewing the entire scene
+	auto entOpt = findEntity(entityName);
+	if (!entOpt || !entOpt->get().model) {
 		setupCameraToViewScene();
 		return;
 	}
 
-	// Calculate entity center in world space
-	BoundingBox bbox = entity->model->localSpaceBBox;
-	glm::mat4 worldM = entity->transform * glm::scale(glm::mat4(1.0f), glm::vec3(entity->scale));
+	Entity const& entity = entOpt->get();
 
 	BoundingBox worldBounds;
 	worldBounds.min = glm::vec3(std::numeric_limits<float>::max());
 	worldBounds.max = glm::vec3(std::numeric_limits<float>::lowest());
 
-	glm::vec3 corners[8] = {glm::vec3(bbox.min.x, bbox.min.y, bbox.min.z), glm::vec3(bbox.max.x, bbox.min.y, bbox.min.z),
-													glm::vec3(bbox.min.x, bbox.max.y, bbox.min.z), glm::vec3(bbox.max.x, bbox.max.y, bbox.min.z),
-													glm::vec3(bbox.min.x, bbox.min.y, bbox.max.z), glm::vec3(bbox.max.x, bbox.min.y, bbox.max.z),
-													glm::vec3(bbox.min.x, bbox.max.y, bbox.max.z), glm::vec3(bbox.max.x, bbox.max.y, bbox.max.z)};
+	BoundingBox local = entity.model->localSpaceBBox;
+	glm::mat4 toWorldMatrix = entity.transform; // Model matrix of MVP transformation
 
-	for (int i = 0; i < 8; ++i) {
-		glm::vec4 t = worldM * glm::vec4(corners[i], 1.0f);
-		glm::vec3 p = glm::vec3(t) / t.w;
-		worldBounds.min = glm::min(worldBounds.min, p);
-		worldBounds.max = glm::max(worldBounds.max, p);
+	glm::vec3 corners[8] = {
+			{local.min.x, local.min.y, local.min.z}, {local.max.x, local.min.y, local.min.z}, {local.min.x, local.max.y, local.min.z},
+			{local.max.x, local.max.y, local.min.z}, {local.min.x, local.min.y, local.max.z}, {local.max.x, local.min.y, local.max.z},
+			{local.min.x, local.max.y, local.max.z}, {local.max.x, local.max.y, local.max.z},
+	};
+
+	for (glm::vec3 c : corners) {
+		glm::vec3 wp = glm::vec3(toWorldMatrix * glm::vec4(c, 1.0f));
+		worldBounds.min = glm::min(worldBounds.min, wp);
+		worldBounds.max = glm::max(worldBounds.max, wp);
 	}
 
+	// Calculate scene center and bounding radius
 	glm::vec3 worldCenter = (worldBounds.min + worldBounds.max) * 0.5f;
 	glm::vec3 size = worldBounds.max - worldBounds.min;
-	float radius = std::max({size.x, size.y, size.z}) * 0.5f;
+	float radius = std::max({size.x, size.y, size.z}) * 0.5f * padding;
 
-	// Adjust distance based on entity size if not explicitly specified
-	float viewDistance = (distance <= 0.0f) ? radius / std::tan(glm::radians(45.0f) * 0.5f) : distance;
+	// Position camera so the entire scene fits the view frustum
+	float fov = glm::radians(45.0f);
+	float distance = radius / std::tan(fov * 0.5f);
+	glm::vec3 cameraPos = worldCenter + glm::vec3(0.0f, radius * 0.1f, distance);
 
-	// Position camera to view the entity
-	glm::vec3 cameraPos = worldCenter + glm::vec3(0.0f, radius * 0.1f, viewDistance);
-
-	// Set camera to look at the entity center
+	// Set camera to look at the center of the scene
 	cam.lookAt(cameraPos, worldCenter);
 }
 
 // Implementation for finding entity by name
-Entity* Scene::findEntity(std::string const& name)
+std::optional<std::reference_wrapper<Entity>> Scene::findEntity(std::string const& name)
 {
-	auto it = entityMap_.find(name);
-	if (it != entityMap_.end() && it->second < ents.size()) {
-		return &ents[it->second];
-	}
-	return nullptr;
+	auto it = std::ranges::find_if(ents, [&](Entity const& e) { return e.model && e.model->modelName == name; });
+	if (it == ents.end())
+		return std::nullopt;
+
+	return *it; // implicit conversion to std::reference_wrapper
 }
 
 // Implementation for adding entity with tracking by name
-void Scene::addEntity(std::shared_ptr<Model> model, glm::mat4 const& transform, std::string const& name)
+void Scene::addEntity(std::shared_ptr<Model> model)
 {
 	if (!model)
 		return;
@@ -197,37 +203,15 @@ void Scene::addEntity(std::shared_ptr<Model> model, glm::mat4 const& transform, 
 	// Create a new entity
 	Entity entity;
 	entity.model = model;
-	entity.transform = transform;
-
-	// Set name (use auto-generated if empty)
-	entity.name = name.empty() ? "entity_" + std::to_string(ents.size()) : name;
 
 	// Add to entities vector
-	size_t index = ents.size();
 	ents.push_back(entity);
-
-	// Add to name lookup map
-	entityMap_[entity.name] = index;
 }
 
 // Implementation for removing entity
 void Scene::removeEntity(std::string const& name)
 {
-	auto it = entityMap_.find(name);
-	if (it != entityMap_.end() && it->second < ents.size()) {
-		size_t index = it->second;
-
-		// Remove from entities vector
-		ents.erase(ents.begin() + index);
-		entityMap_.erase(it);
-
-		// Update indices in the map
-		for (auto& pair : entityMap_) {
-			if (pair.second > index) {
-				pair.second--;
-			}
-		}
-	}
+	std::erase_if(ents, [&](Entity const& e) { return e.model && e.model->modelName == name; });
 }
 
 // Implementation for adding light
@@ -253,13 +237,6 @@ void Scene::loadSkybox(std::string const& directory)
 // Scene cleanup
 void Scene::cleanup()
 {
-	// Clear all entities (but don't delete models - ModelLoader owns them)
-	ents.clear();
-	entityMap_.clear();
-
-	// Clear lights
-	lights.clear();
-
 	// Clean up skybox if needed
 	if (skyboxVAO_ != 0) {
 		glDeleteVertexArrays(1, &skyboxVAO_);

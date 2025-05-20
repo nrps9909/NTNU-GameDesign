@@ -6,12 +6,9 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "BoundingBoxVisualizer.hpp"
-#include "LightVisualizer.hpp"
 #include "Model.hpp"
 #include "Scene.hpp"
 #include "Shader.hpp"
-#include "SkeletonVisualizer.hpp"
 #include "include_5568ke.hpp"
 
 Renderer& Renderer::getInstance()
@@ -47,14 +44,14 @@ void Renderer::setupDefaultRenderer()
 	lightPointShader_ = shaders_["lightPoint"];
 
 	// Initialize skeleton visualizer
-	SkeletonVisualizer::getInstance().init();
+	skeletonVisualizerRef.init();
 	std::cout << "[Renderer] SkeletonVisualizer initialized" << std::endl;
 
-	LightVisualizer::getInstance().init();
+	lightVisualizerRef.init();
 	std::cout << "[Renderer] LightVisualizer initialized" << std::endl;
 
-	BoundingBoxVisualizer::get().init();
-	shaders_["boundingBox"] = BoundingBoxVisualizer::get().boxShader;
+	boundingBoxVisualizerRef.init();
+	shaders_["boundingBox"] = boundingBoxVisualizerRef.boxShader;
 	std::cout << "[Renderer] BoundingBoxVisualizer initialized" << std::endl;
 }
 
@@ -85,8 +82,8 @@ void Renderer::drawScene(Scene const& scene)
 	// Draw opaque models
 	drawModels_(scene);
 
-	LightVisualizer::getInstance().drawLights(scene, scene.cam.view, scene.cam.proj, lightPointShader_);
-	BoundingBoxVisualizer::get().draw(scene, scene.cam.view, scene.cam.proj);
+	lightVisualizerRef.drawLights(scene, scene.cam.view, scene.cam.proj, lightPointShader_);
+	boundingBoxVisualizerRef.draw(scene, scene.cam.view, scene.cam.proj);
 }
 
 void Renderer::drawModels_(Scene const& scene)
@@ -133,30 +130,22 @@ void Renderer::drawModels_(Scene const& scene)
 				shaderToUse = skinnedShader_.get();
 
 				// Debug output
-				// std::cout << "[Renderer] Using skinned shader for: " << entity.name << " (has " << entity.model->jointMatrices.size() << " joint matrices)"
+				// std::cout << "[Renderer] Using skinned shader for: " << entity.model->modelName << " (has " << entity.model->jointMatrices.size() << " joint
+				// matrices)"
 				// << std::endl;
 			}
 			else {
-				// std::cout << "[Renderer] Using standard shader for: " << entity.name << std::endl;
+				// std::cout << "[Renderer] Using standard shader for: " << entity.model->modelName << std::endl;
 			}
 
 			// Bind the appropriate shader
 			shaderToUse->bind();
 
-			// Create a modified model matrix that includes the entity's scale
-			glm::mat4 modelMatrix = entity.transform;
-
-			// Apply scaling to the model matrix
-			// We create a separate scaling matrix and multiply it with the entity's transform
-			glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(entity.scale));
-			modelMatrix = modelMatrix * scaleMatrix; // Apply scale
-
 			// Draw the model with the scaled model matrix
-			entity.model->draw(*shaderToUse, modelMatrix);
+			entity.model->draw(*shaderToUse, entity.transform);
 		}
 
-		if (auto& skeletonVisualizer = SkeletonVisualizer::getInstance(); // check if the skeleton data exist
-				skeletonVisualizer.hasSkeletonData(entity.model)) {
+		if (skeletonVisualizerRef.hasSkeletonData(entity.model)) {
 
 			// Draw skeleton if enabled
 			if (showSkeletons) {
@@ -173,13 +162,8 @@ void Renderer::drawModels_(Scene const& scene)
 				lineShader->sendMat4("view", scene.cam.view);
 				lineShader->sendMat4("proj", scene.cam.proj);
 
-				// Create a scaled transform for the skeleton visualization
-				glm::mat4 modelMatrix = entity.transform;
-				glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(entity.scale));
-				modelMatrix = modelMatrix * scaleMatrix; // Apply scale
-
 				// Draw debug visualization
-				skeletonVisualizer.drawDebugLines(entity.model, modelMatrix, lineShader);
+				skeletonVisualizerRef.drawDebugLines(entity.model, entity.transform, lineShader);
 
 				// Rebind main shader after drawing lines
 				mainShader_->bind();
@@ -217,7 +201,7 @@ void Renderer::endFrame()
 void Renderer::cleanup()
 {
 	// Clean up skeleton visualizer
-	SkeletonVisualizer::getInstance().cleanup();
-	LightVisualizer::getInstance().cleanup();
-	BoundingBoxVisualizer::get().cleanup();
+	skeletonVisualizerRef.cleanup();
+	lightVisualizerRef.cleanup();
+	boundingBoxVisualizerRef.cleanup();
 }
