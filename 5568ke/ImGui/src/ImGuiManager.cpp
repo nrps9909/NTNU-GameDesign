@@ -111,13 +111,12 @@ void ImGuiManager::drawTransformEditor_(Entity& entity)
 		entity.rebuildTransform();
 		entity.model->updateMatrices();
 	}
-
-	ImGui::Separator();
 }
 
 void ImGuiManager::drawModelLoaderInterface(Scene& scene)
 {
 	if (ImGui::Button("Load Model")) {
+		ImGui::SetNextWindowSize(ImVec2(600, 250), ImGuiCond_FirstUseEver);
 		IGFD::FileDialogConfig config;
 		config.path = currentPath_;
 		config.flags = ImGuiFileDialogFlags_ReadOnlyFileNameField;
@@ -157,6 +156,9 @@ void ImGuiManager::drawModelLoaderInterface(Scene& scene)
 
 void ImGuiManager::drawSceneEntityManager(Scene& scene)
 {
+	ImGui::SetNextWindowSize(ImVec2(400, 450), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Scene Entities");
 	drawModelLoaderInterface(scene);
 
@@ -195,11 +197,6 @@ void ImGuiManager::drawSceneEntityManager(Scene& scene)
 			entity.visible = visible;
 		}
 
-		// Transform editor
-		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-			drawTransformEditor_(entity);
-		}
-
 		// Remove entity button
 		ImGui::SameLine();
 		if (ImGui::Button("Remove Entity")) {
@@ -213,6 +210,10 @@ void ImGuiManager::drawSceneEntityManager(Scene& scene)
 				scene.setupCameraToViewEntity(scene.ents[selectedEntityIndex_].model->modelName);
 			}
 		}
+
+		// Transform editor
+		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+			drawTransformEditor_(entity);
 	}
 
 	// Show bone hierarchy
@@ -274,6 +275,9 @@ void ImGuiManager::drawSceneEntityManager(Scene& scene)
 
 void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 {
+	ImGui::SetNextWindowSize(ImVec2(400, 350), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(420, 10), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Animation Controls");
 
 	// Find entities with animations
@@ -521,6 +525,9 @@ void ImGuiManager::drawNodeTree_(std::shared_ptr<Node> node, int depth)
 
 void ImGuiManager::drawStatusWindow(Scene& scene)
 {
+	ImGui::SetNextWindowSize(ImVec2(300, 150), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(10, 470), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Statistics");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Text("Scene entities: %zu", scene.ents.size());
@@ -536,25 +543,37 @@ void ImGuiManager::drawStatusWindow(Scene& scene)
 
 void ImGuiManager::drawSceneControlWindow(Scene& scene)
 {
+	ImGui::SetNextWindowSize(ImVec2(400, 350), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(830, 10), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Scene Controls");
 
 	// Skeleton visualization controls
 	ImGui::Text("Visualization Options:");
-	bool& showSkeletons = rendererRef.showSkeletons;
 	bool& showModels = rendererRef.showModels;
 	bool& showWireFrame = rendererRef.showWireFrame;
+	bool& showSkybox = rendererRef.showSkybox;
+	bool& showSkeletons = rendererRef.showSkeletons;
+	bool& showLightPoint = rendererRef.showLightPoint;
+	bool& showBBox = rendererRef.showBBox;
 
-	if (ImGui::Checkbox("Show Skeleton", &showSkeletons)) {
-		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showSkeletons ? "ON" : "OFF") << std::endl;
-	}
-
-	if (ImGui::Checkbox("Show Model", &showModels)) {
+	if (ImGui::Checkbox("Show Model", &showModels))
 		std::cout << "[ImGui INFO] Setting model visibility to: " << (showModels ? "ON" : "OFF") << std::endl;
-	}
 
-	if (ImGui::Checkbox("Show Wire Frame", &showWireFrame)) {
+	if (ImGui::Checkbox("Show Wire Frame", &showWireFrame))
 		std::cout << "[ImGui INFO] Setting Wire Frame visibility to: " << (showWireFrame ? "ON" : "OFF") << std::endl;
-	}
+
+	if (ImGui::Checkbox("Show Skybox", &showSkybox))
+		std::cout << "[ImGui INFO] Setting Skybox visibility to: " << (showSkybox ? "ON" : "OFF") << std::endl;
+
+	if (ImGui::Checkbox("Show Skeleton", &showSkeletons))
+		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showSkeletons ? "ON" : "OFF") << std::endl;
+
+	if (ImGui::Checkbox("Show Light Point", &showLightPoint))
+		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showLightPoint ? "ON" : "OFF") << std::endl;
+
+	if (ImGui::Checkbox("Show AABB Bounding Box", &showBBox))
+		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showBBox ? "ON" : "OFF") << std::endl;
 
 	ImGui::Separator();
 
