@@ -17,7 +17,7 @@
 
 class Node;
 class Scene;
-class Entity;
+class GameObject;
 
 class ImGuiManager {
 public:
@@ -28,10 +28,10 @@ public:
 	void newFrame();
 	void render();
 
-	void drawStatusWindow(Scene& scene);					// Info window
-	void drawModelLoaderInterface(Scene& scene);	// Model loader interface
-	void drawSceneEntityManager(Scene& scene);		// Scene entity manager interface
-	void drawAnimationControlPanel(Scene& scene); // Animation UI and skeleton control
+	void drawStatusWindow(Scene& scene);					 // Info window
+	void drawModelLoaderInterface(Scene& scene);	 // Model loader interface
+	void drawSceneGameObjectManager(Scene& scene); // Scene game object manager interface
+	void drawAnimationControlPanel(Scene& scene);	 // Animation UI and skeleton control
 	void drawSceneControlWindow(Scene& scene);
 
 public:
@@ -54,11 +54,11 @@ private:
 	std::array<float, 3> targetModelPosition_{};
 
 	// Scene management state
-	int selectedEntityIndex_{};
+	int selectedGameObjectIndex_{};
 	int selectedClipIndex_{-1};
 
 	// Utility functions
 	void loadSelectedModel_(Scene& scene);
-	void drawTransformEditor_(Entity& entity);
+	void drawTransformEditor_(GameObject& gameObject);
 	void drawNodeTree_(std::shared_ptr<Node> node, int depth);
 };

@@ -130,11 +130,11 @@ void Application::setupDefaultScene_()
 			// Add to scene
 			registry.addModelToScene(sceneRef, model);
 
-			// Store entity name in animation state
-			animStateRef.entityName = name;
+			// Store game object name in animation state
+			animStateRef.gameObjectName = name;
 
 			// Set up camera
-			sceneRef.setupCameraToViewEntity(name);
+			sceneRef.setupCameraToViewGameObject(name);
 		}
 
 		// Initialize renderer
@@ -152,9 +152,9 @@ void Application::processInput_(float dt)
 	bool charMode = animStateRef.characterMoveMode;
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
 		if (charMode) {
-			auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-			if (entOpt) {
-				Entity& entity = entOpt->get();
+			auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
+			if (gameObjectOpt) {
+				GameObject& gameObject = gameObjectOpt->get();
 				glm::vec3 forward = glm::normalize(glm::vec3(sceneRef.cam.front.x, 0.0f, sceneRef.cam.front.z));
 				glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
 
@@ -175,16 +175,16 @@ void Application::processInput_(float dt)
 					animStateRef.onGround = false;
 				}
 
-				auto resetClipToFirstFrame = [&](Entity& e) {
-					if (!e.model || e.model->animations.empty())
+				auto resetClipToFirstFrame = [&](GameObject& gameObject) {
+					if (!gameObject.getModel() || gameObject.getModel()->animations.empty())
 						return;
 
 					int clip = animStateRef.clipIndex;
-					if (clip >= e.model->animations.size())
+					if (clip >= gameObject.getModel()->animations.size())
 						clip = 0;
 
-					e.model->animations[clip]->setAnimationFrame(e.model->nodes, 0.0f);
-					e.model->updateLocalMatrices();
+					gameObject.getModel()->animations[clip]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
+					gameObject.getModel()->updateLocalMatrices();
 				};
 
 				bool isMoving = glm::length(move) > 0.0f;
@@ -194,23 +194,23 @@ void Application::processInput_(float dt)
 				if (isMoving) {
 					// Update position and direction
 					move = glm::normalize(move) * speed * dt;
-					entity.position += move;
+					gameObject.position += move;
 
 					glm::vec2 dir2D(move.x, move.z);
 					if (glm::length(dir2D) > 0.0f)
-						entity.rotationDeg.y = glm::degrees(atan2(move.x, move.z));
+						gameObject.rotationDeg.y = glm::degrees(atan2(move.x, move.z));
 
-					entity.rebuildTransform();
+					gameObject.updateTransformMatrix();
 				}
 
 				// Changed the statue of animation
 				if (startedMoving) {
-					animStateRef.play(std::min<int>(animStateRef.clipIndex, entity.model->animations.size() - 1), 0.0f);
-					resetClipToFirstFrame(entity); // Start from frame 0
+					animStateRef.play(std::min<int>(animStateRef.clipIndex, gameObject.getModel()->animations.size() - 1), 0.0f);
+					resetClipToFirstFrame(gameObject); // Start from frame 0
 				}
 				else if (stoppedMoving) {
 					animStateRef.stop();
-					resetClipToFirstFrame(entity); // Reset to frame 0
+					resetClipToFirstFrame(gameObject); // Reset to frame 0
 				}
 
 				animStateRef.wasMoving = isMoving;
@@ -225,12 +225,12 @@ void Application::processInput_(float dt)
 	// Update animation if playing
 	if (animStateRef.isAnimating) {
 		// Update animation
-		auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-		if (!entOpt)
+		auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
+		if (!gameObjectOpt)
 			return;
 
-		Entity& entity = entOpt->get();
-		auto model = entity.model;
+		GameObject& gameObject = gameObjectOpt->get();
+		auto model = gameObject.getModel();
 		if (!model || model->animations.empty())
 			return;
 
@@ -251,7 +251,7 @@ void Application::processInput_(float dt)
 		}
 
 		// Update animation frame
-		std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", entity=" << animStateRef.entityName
+		std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", gameObject=" << animStateRef.gameObjectName
 							<< ", clip=" << animStateRef.clipIndex << std::endl;
 
 		clip->setAnimationFrame(model->nodes, animStateRef.currentTime);
@@ -264,18 +264,18 @@ void Application::tick_(float dt)
 	// Process input (keyboard, mouse)
 	processInput_(dt);
 
-	// Look up the target entity
-	auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-	if (!entOpt)
+	// Look up the target gameObject
+	auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
+	if (!gameObjectOpt)
 		return;
 
-	Entity& entity = entOpt->get();
+	GameObject& gameObject = gameObjectOpt->get();
 
 	// Update animation state
-	if (animStateRef.isAnimating && !animStateRef.entityName.empty()) {
-		auto model = entity.model;
+	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
+		auto model = gameObject.getModel();
 		if (!model || model->animations.empty()) {
-			// If the selected entity has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
+			// If the selected gameObject has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
 			animStateRef.stop();
 		}
 		else {
@@ -302,21 +302,21 @@ void Application::tick_(float dt)
 	// Simple gravity and jump physics
 	if (animStateRef.characterMoveMode) {
 		animStateRef.verticalVelocity -= animStateRef.gravity * dt;
-		entity.position.y += animStateRef.verticalVelocity * dt;
+		gameObject.position.y += animStateRef.verticalVelocity * dt;
 
 		// Ground collision at y = 0
-		if (entity.position.y <= 0.0f) {
-			entity.position.y = 0.0f;
+		if (gameObject.position.y <= 0.0f) {
+			gameObject.position.y = 0.0f;
 			animStateRef.verticalVelocity = 0.0f;
 			animStateRef.onGround = true;
 		}
 
-		entity.rebuildTransform();
+		gameObject.updateTransformMatrix();
 	}
 
 	// Update camera position and matrices
-	if (animStateRef.characterMoveMode && !animStateRef.entityName.empty())
-		sceneRef.cam.updateFollow(entity.position, animStateRef.followDistance, animStateRef.followHeight);
+	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty())
+		sceneRef.cam.updateFollow(gameObject.position, animStateRef.followDistance, animStateRef.followHeight);
 
 	sceneRef.cam.updateMatrices(window_);
 }
@@ -339,7 +339,7 @@ void Application::render_()
 	ImGuiManagerRef.newFrame();
 
 	if (showSceneManager_)
-		ImGuiManagerRef.drawSceneEntityManager(sceneRef);
+		ImGuiManagerRef.drawSceneGameObjectManager(sceneRef);
 
 	if (showAnimationUI_)
 		ImGuiManagerRef.drawAnimationControlPanel(sceneRef);

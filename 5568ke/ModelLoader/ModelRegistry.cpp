@@ -36,7 +36,7 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 
 	int index = 1;
 	std::string baseName = modelName;
-	while (sceneRef.findEntity(modelName)) {
+	while (sceneRef.findGameObject(modelName)) {
 		modelName = baseName + '(' + std::to_string(suffix++) + ')';
 	}
 
@@ -76,13 +76,13 @@ void ModelRegistry::addModelToScene(Scene& scene, std::shared_ptr<Model> model)
 	}
 
 	// Add to scene
-	scene.addEntity(model);
+	scene.addGameObject(model);
 
 	std::cout << "[ModelRegistry] Added model '" << model->modelName << "' to scene" << std::endl;
 }
 
 // Remove a model from a scene
-void ModelRegistry::removeModelFromScene(Scene& scene, std::string const& name) { scene.removeEntity(name); }
+void ModelRegistry::removeModelFromScene(Scene& scene, std::string const& name) { scene.removeGameObject(name); }
 
 // Private method to detect format from file extension
 ModelFormat ModelRegistry::detectFormat_(std::string const& path)
