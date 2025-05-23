@@ -180,7 +180,7 @@ void Application::processInput_(float dt)
 						return;
 
 					int clip = animStateRef.clipIndex;
-					if (clip >= gameObject.getModel()->animations.size())
+					if (static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size())
 						clip = 0;
 
 					gameObject.getModel()->animations[clip]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
@@ -235,7 +235,7 @@ void Application::processInput_(float dt)
 			return;
 
 		// Ensure valid clip index
-		if (animStateRef.clipIndex >= model->animations.size())
+		if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 			animStateRef.clipIndex = 0;
 
 		// Get clip
@@ -280,7 +280,7 @@ void Application::tick_(float dt)
 		}
 		else {
 			// Ensure clip index is within bounds
-			if (animStateRef.clipIndex >= model->animations.size())
+			if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 				animStateRef.clipIndex = 0;
 
 			// Advance animation time

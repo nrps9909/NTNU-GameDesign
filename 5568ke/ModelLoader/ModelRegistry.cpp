@@ -23,7 +23,7 @@ ModelRegistry& ModelRegistry::getInstance()
 ModelRegistry::ModelRegistry() : gltfLoader_(std::make_unique<GltfLoader>()) {}
 
 // Load a model with optional position parameters
-std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::string const& name, glm::vec3 position, glm::vec3 rotation, float scale)
+std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::string const& name)
 {
 	// Use provided name or generate one from path
 	// Since most of the model are called scene.gltf, so we used the folder name that contained the model as the default name.
@@ -33,8 +33,6 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 	// Check if model is already loaded
 	// Append (1), (2), ... until an unused name is found
 	int suffix = 1;
-
-	int index = 1;
 	std::string baseName = modelName;
 	while (sceneRef.findGameObject(modelName)) {
 		modelName = baseName + '(' + std::to_string(suffix++) + ')';

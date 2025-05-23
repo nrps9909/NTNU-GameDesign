@@ -212,7 +212,7 @@ void ImGuiManager::drawSceneGameObjectManager(Scene& scene)
 
 		ImGui::SameLine();
 		if (ImGui::Button("View Selected GameObject")) {
-			if (selectedGameObjectIndex_ >= 0 && selectedGameObjectIndex_ < scene.gameObjects.size()) {
+			if (selectedGameObjectIndex_ >= 0 && static_cast<std::size_t>(selectedGameObjectIndex_) < scene.gameObjects.size()) {
 				scene.setupCameraToViewGameObject(scene.gameObjects[selectedGameObjectIndex_].getModel()->modelName);
 			}
 		}
@@ -313,11 +313,11 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 	for (auto const& clip : gameObject.getModel()->animations)
 		clipNames.push_back(clip->clipName);
 
-	if (selectedClipIndex_ >= clipNames.size())
+	if (static_cast<std::size_t>(selectedClipIndex_) >= clipNames.size())
 		selectedClipIndex_ = 0;
 
 	if (ImGui::BeginCombo("Animation", clipNames.empty() ? "None" : clipNames[selectedClipIndex_].c_str())) {
-		for (int i = 0; i < clipNames.size(); i++) {
+		for (int i = 0; static_cast<std::size_t>(i) < clipNames.size(); i++) {
 			bool isSelected = (selectedClipIndex_ == i);
 			if (ImGui::Selectable(clipNames[i].c_str(), isSelected)) {
 				selectedClipIndex_ = i;
@@ -326,7 +326,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 				animStateRef.clipIndex = selectedClipIndex_;
 
 				// Reset animation visually
-				if (model->animations.size() > selectedClipIndex_) {
+				if (model->animations.size() > static_cast<std::size_t>(selectedClipIndex_)) {
 					model->animations[selectedClipIndex_]->setAnimationFrame(model->nodes, 0.0f);
 					model->updateLocalMatrices();
 				}
@@ -353,7 +353,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 
 	// Get duration
 	float duration = 0.0f;
-	if (model->animations.size() > selectedClipIndex_) {
+	if (model->animations.size() > static_cast<std::size_t>(selectedClipIndex_)) {
 		duration = model->animations[selectedClipIndex_]->getDuration();
 	}
 
@@ -363,7 +363,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 
 		if (ImGui::SliderFloat("Time", &currentTime, 0.0f, duration)) {
 			// Update animation frame if this is the current gameObject
-			if (model->animations.size() > selectedClipIndex_) {
+			if (model->animations.size() > static_cast<std::size_t>(selectedClipIndex_)) {
 				model->animations[selectedClipIndex_]->setAnimationFrame(model->nodes, currentTime);
 				model->updateLocalMatrices();
 			}
@@ -380,7 +380,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 		animStateRef.play(selectedClipIndex_);
 
 		// Apply initial frame for visual feedback
-		if (model->animations.size() > selectedClipIndex_) {
+		if (model->animations.size() > static_cast<std::size_t>(selectedClipIndex_)) {
 			model->animations[selectedClipIndex_]->setAnimationFrame(model->nodes, 0.0f);
 			model->updateLocalMatrices();
 		}
@@ -412,7 +412,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 		animStateRef.stop();
 
 		// Reset visually
-		if (model->animations.size() > selectedClipIndex_) {
+		if (model->animations.size() > static_cast<std::size_t>(selectedClipIndex_)) {
 			model->animations[selectedClipIndex_]->setAnimationFrame(model->nodes, 0.0f);
 			model->updateLocalMatrices();
 		}
@@ -587,7 +587,7 @@ void ImGuiManager::drawSceneControlWindow(Scene& scene)
 		ImGui::SameLine();
 
 		if (ImGui::Button("View Selected GameObject")) {
-			if (selectedGameObjectIndex_ >= 0 && selectedGameObjectIndex_ < scene.gameObjects.size()) {
+			if (selectedGameObjectIndex_ >= 0 && static_cast<std::size_t>(selectedGameObjectIndex_) < scene.gameObjects.size()) {
 				scene.setupCameraToViewGameObject(scene.gameObjects[selectedGameObjectIndex_].getModel()->modelName);
 			}
 		}

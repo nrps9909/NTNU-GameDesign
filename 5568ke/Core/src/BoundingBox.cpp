@@ -40,7 +40,7 @@ BoundingBox getSkinnedMeshBBox(Mesh const& mesh, Model const& model)
 			int id = v.boneIds[i];
 
 			// do the linear blend skinning
-			if (w > 0.0f && id >= 0 && id < model.jointMatrices.size()) {
+			if (w > 0.0f && id >= 0 && static_cast<std::size_t>(id) < model.jointMatrices.size()) {
 				skinned += w * model.jointMatrices[id] * pos;
 				total += w;
 			}
@@ -64,7 +64,7 @@ BoundingBox getStaticMeshBox(Model const& model, size_t meshIndex)
 
 	if (meshIndex < model.meshNodeIndices.size()) {
 		int nodeIdx = model.meshNodeIndices[meshIndex];
-		if (nodeIdx >= 0 && nodeIdx < model.nodes.size() && model.nodes[nodeIdx])
+		if (nodeIdx >= 0 && static_cast<std::size_t>(nodeIdx) < model.nodes.size() && model.nodes[nodeIdx])
 			nodeM = model.nodes[nodeIdx]->getNodeMatrix();
 	}
 
