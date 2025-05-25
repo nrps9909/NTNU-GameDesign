@@ -39,7 +39,6 @@ private:
 	void loop_();
 	void processInput_(float dt);
 
-	// New tick and render methods
 	void tick_(float dt);
 	void render_();
 

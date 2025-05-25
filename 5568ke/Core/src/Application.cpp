@@ -177,9 +177,8 @@ void Application::processInput_(float dt)
 					move += right;
 
 				// Jump input
-				if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS && animStateRef.onGround) {
-					animStateRef.verticalVelocity = animStateRef.jumpSpeed;
-					animStateRef.onGround = false;
+				if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
+					gameObject.velocity.y = gameObject.jumpSpeed; // launch upward
 				}
 
 				auto resetClipToFirstFrame = [&](GameObject& gameObject) {
@@ -275,6 +274,23 @@ void Application::tick_(float dt)
 	if (!animateGO)
 		return;
 
+	for (auto& goPtr : sceneRef.gameObjects) {
+		auto& go = *goPtr;
+		if (!go.active)
+			continue;
+
+		// Apply gravity and integrate velocity
+		go.velocity.y -= 9.8f * dt;
+		go.position += go.velocity * dt;
+		go.updateTransformMatrix();
+
+		if (go.worldBBox.min.y <= 0.0f) {
+			go.position.y = 0.0f;
+			go.velocity.y = 0.0f;
+			go.updateTransformMatrix();
+		}
+	}
+
 	// Update animation state
 	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
 		auto model = animateGO->getModel();
@@ -302,24 +318,6 @@ void Application::tick_(float dt)
 			model->updateLocalMatrices();
 		}
 	}
-
-	// Simple gravity and jump physics
-	if (animStateRef.characterMoveMode) {
-		animStateRef.verticalVelocity -= animStateRef.gravity * dt;
-		animateGO->position.y += animStateRef.verticalVelocity * dt;
-
-		// Ground collision at y = 0
-		if (animateGO->position.y <= 0.0f) {
-			animateGO->position.y = 0.0f;
-			animStateRef.verticalVelocity = 0.0f;
-			animStateRef.onGround = true;
-		}
-
-		animateGO->updateTransformMatrix();
-	}
-
-	for (auto& go : sceneRef.gameObjects)
-		go->updateTransformMatrix();
 
 	collisionSysRef.update();
 

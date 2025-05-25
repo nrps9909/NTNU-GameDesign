@@ -12,6 +12,7 @@ struct BoundingBox {
 
 namespace BBoxUtil {
 BoundingBox getMeshBBox(Mesh const& mesh);
+glm::vec3 getBBoxCenter(BoundingBox const&);
 void updateLocalBBox(Model& m);
 bool isIntersectBBox(BoundingBox const& a, BoundingBox const& b);
 BoundingBox mergeBBox(BoundingBox const& a, BoundingBox const& b);

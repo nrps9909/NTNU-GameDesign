@@ -97,6 +97,8 @@ BoundingBox getMeshBBox(Mesh const& mesh)
 	return bbox;
 }
 
+glm::vec3 getBBoxCenter(BoundingBox const& bb) { return (bb.min + bb.max) * 0.5f; }
+
 void updateLocalBBox(Model& model)
 {
 	BoundingBox global;
