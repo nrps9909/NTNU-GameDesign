@@ -48,7 +48,7 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 		model = gltfLoader_->loadModel(path);
 		break;
 	default:
-		std::cout << "[ModelRegistry ERROR] Unsupported model format" << std::endl;
+		// std::cout << "[ModelRegistry ERROR] Unsupported model format" << std::endl;
 		return nullptr;
 	}
 
@@ -57,11 +57,11 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 		model->modelName = modelName;
 		model->updateLocalMatrices();
 
-		std::cout << "[ModelRegistry] Successfully loaded model '" << modelName << "'" << std::endl;
+		// std::cout << "[ModelRegistry] Successfully loaded model '" << modelName << "'" << std::endl;
 		return model;
 	}
 
-	std::cout << "[ModelRegistry ERROR] Failed to load model '" << path << "'" << std::endl;
+	// std::cout << "[ModelRegistry ERROR] Failed to load model '" << path << "'" << std::endl;
 	return nullptr;
 }
 
@@ -69,11 +69,11 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 std::shared_ptr<GameObject> ModelRegistry::addModelToScene(Scene& scene, std::shared_ptr<Model> model)
 {
 	if (!model) {
-		std::cout << "[ModelRegistry ERROR] Invalid Model Pointer" << std::endl;
+		// std::cout << "[ModelRegistry ERROR] Invalid Model Pointer" << std::endl;
 		return nullptr;
 	}
 
-	std::cout << "[ModelRegistry] Added model '" << model->modelName << "' to scene" << std::endl;
+	// std::cout << "[ModelRegistry] Added model '" << model->modelName << "' to scene" << std::endl;
 
 	// Add to scene
 	return scene.addGameObject(model);
@@ -99,6 +99,6 @@ ModelFormat ModelRegistry::detectFormat_(std::string const& path)
 	}
 
 	// Default to GLTF if unknown
-	std::cout << "[ModelRegistry ERROR] Unknown file extension '" << extension << "', defaulting to GLTF loader" << std::endl;
+	// std::cout << "[ModelRegistry ERROR] Unknown file extension '" << extension << "', defaulting to GLTF loader" << std::endl;
 	return ModelFormat::UNSUPPORTED;
 }

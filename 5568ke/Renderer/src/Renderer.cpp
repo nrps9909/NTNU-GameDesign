@@ -36,20 +36,20 @@ void Renderer::init()
 	// Initialize skeleton visualizer
 	skeletonVisualizerRef.init();
 	shaders_["skeleton"] = skeletonVisualizerRef.skeletonShader;
-	std::cout << "[Renderer] SkeletonVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] SkeletonVisualizer initialized" << std::endl;
 
 	lightVisualizerRef.init();
 	shaders_["lightPoint"] = lightVisualizerRef.lightPointShader;
-	std::cout << "[Renderer] LightPointVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] LightPointVisualizer initialized" << std::endl;
 
 	boundingBoxVisualizerRef.init();
 	shaders_["boundingBox"] = boundingBoxVisualizerRef.boxShader;
-	std::cout << "[Renderer] BoundingBoxVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] BoundingBoxVisualizer initialized" << std::endl;
 
 	skyboxVisualizerRef.init();
 	shaders_["skybox_model"] = skyboxVisualizerRef.skyboxShader;
 	shaders_["skybox_cubemap"] = skyboxVisualizerRef.cubemapShader;
-	std::cout << "[Renderer] SkyboxVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] SkyboxVisualizer initialized" << std::endl;
 }
 
 void Renderer::beginFrame(int w, int h, glm::vec3 const& c)

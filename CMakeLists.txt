@@ -38,6 +38,7 @@ set(PROJECT_MODULES
     ImGui
     Physics
     Renderer
+    NTNU
 )
 
 add_executable(${PROJECT_NAME})

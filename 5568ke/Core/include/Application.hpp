@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "CollisionSystem.hpp"
+#include "DialogSystem.hpp"
 #include "GlobalAnimationState.hpp"
 #include "ImGuiManager.hpp"
 #include "ModelRegistry.hpp"
@@ -25,6 +26,7 @@ public:
 	Renderer& rendererRef = Renderer::getInstance();
 	GlobalAnimationState& animStateRef = GlobalAnimationState::getInstance();
 	CollisionSystem& collisionSysRef = CollisionSystem::getInstance();
+	DialogSystem& dialogSysRef = DialogSystem::getInstance();
 
 private:
 	// Initialization methods

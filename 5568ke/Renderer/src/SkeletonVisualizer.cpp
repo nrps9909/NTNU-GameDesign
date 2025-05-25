@@ -68,31 +68,31 @@ bool SkeletonVisualizer::hasSkeletonData(std::shared_ptr<Model> model) const
 void SkeletonVisualizer::generateSkeletonData(std::shared_ptr<Model> model)
 {
 	if (!model) {
-		std::cout << "[SkeletonVisualizer] Cannot generate skeleton data: null model" << std::endl;
+		// std::cout << "[SkeletonVisualizer] Cannot generate skeleton data: null model" << std::endl;
 		return;
 	}
 
 	if (!model->rootNode) {
-		std::cout << "[SkeletonVisualizer] Cannot generate skeleton data: null rootNode" << std::endl;
+		// std::cout << "[SkeletonVisualizer] Cannot generate skeleton data: null rootNode" << std::endl;
 		return;
 	}
 
 	// Check if we already have data for this model
 	auto it = skeletonCache.find(model);
 	if (it != skeletonCache.end()) {
-		std::cout << "[SkeletonVisualizer] Using cached skeleton data for model" << std::endl;
+		// std::cout << "[SkeletonVisualizer] Using cached skeleton data for model" << std::endl;
 		return; // Already generated
 	}
 
 	// Create new skeleton data
 	SkeletonData skeletonData;
-	std::cout << "[SkeletonVisualizer] Generating skeleton data for model with " << model->nodes.size() << " nodes" << std::endl;
+	// std::cout << "[SkeletonVisualizer] Generating skeleton data for model with " << model->nodes.size() << " nodes" << std::endl;
 
 	// Process the node hierarchy recursively starting from the root
 	float nodePosScale = 0.005f;
 	processNodeTreePositionsRecursive(model->rootNode, skeletonData.vertices, skeletonData.colors, nodePosScale);
 
-	std::cout << "[SkeletonVisualizer] Generated " << skeletonData.vertices.size() << " vertices for skeleton lines" << std::endl;
+	// std::cout << "[SkeletonVisualizer] Generated " << skeletonData.vertices.size() << " vertices for skeleton lines" << std::endl;
 
 	// Cache the data
 	skeletonCache[model] = skeletonData;
@@ -178,7 +178,7 @@ void SkeletonVisualizer::draw(GameObject const& gameObject, Camera const& cam)
 	auto model = gameObject.getModel();
 
 	if (!model || !skeletonShader) {
-		std::cout << "[SkeletonVisualizer ERROR] Model or skeleton shader is null!" << std::endl;
+		// std::cout << "[SkeletonVisualizer ERROR] Model or skeleton shader is null!" << std::endl;
 		return;
 	}
 
@@ -201,7 +201,7 @@ void SkeletonVisualizer::draw(GameObject const& gameObject, Camera const& cam)
 
 	// Skip if no vertices
 	if (vertices.empty()) {
-		std::cout << "[SkeletonVisualizer] No vertices to draw" << std::endl;
+		// std::cout << "[SkeletonVisualizer] No vertices to draw" << std::endl;
 		return;
 	}
 

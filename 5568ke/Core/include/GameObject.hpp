@@ -87,7 +87,7 @@ public:
 	float restitution{0.2f}; // bounciness [0,1]
 	// collision event callback — override in derived class or assign externally 'other' is the object this collided with
 	std::function<void(std::shared_ptr<GameObject> other)> onCollisionEnter = [&](std::shared_ptr<GameObject> other) {
-		std::cout << "[GameObject]" << this->name << " hit " << other->name << "\n";
+		// std::cout << "[GameObject]" << this->name << " hit " << other->name << "\n";
 	};
 
 private:

@@ -94,13 +94,13 @@ void ImGuiManager::loadSelectedModel_(Scene& scene)
 			collisionSysRef.add(modelCol);
 		}
 
-		std::cout << "Model '" << model->modelName << "' loaded successfully from " << fullPath << std::endl;
+		// std::cout << "Model '" << model->modelName << "' loaded successfully from " << fullPath << std::endl;
 
 		// Reset input fields
 		targetModelName_.clear();
 	}
 	else {
-		std::cout << "Failed to load model from " << fullPath << std::endl;
+		// std::cout << "Failed to load model from " << fullPath << std::endl;
 	}
 }
 
@@ -374,7 +374,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 
 	// Playback buttons
 	if (ImGui::Button("Play", ImVec2(60, 30))) {
-		std::cout << "[ImGui] Play button pressed for " << animStateRef.gameObjectName << ", clip " << selectedClipIndex_ << std::endl;
+		// std::cout << "[ImGui] Play button pressed for " << animStateRef.gameObjectName << ", clip " << selectedClipIndex_ << std::endl;
 
 		// Start animation
 		animStateRef.play(selectedClipIndex_);
@@ -388,13 +388,13 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 	ImGui::SameLine();
 
 	if (ImGui::Button("Pause", ImVec2(60, 30))) {
-		std::cout << "[ImGui] Pause button pressed" << std::endl;
+		// std::cout << "[ImGui] Pause button pressed" << std::endl;
 		animStateRef.pause();
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("Resume", ImVec2(70, 30))) {
-		std::cout << "[ImGui] Resume button pressed" << std::endl;
+		// std::cout << "[ImGui] Resume button pressed" << std::endl;
 
 		if (animStateRef.clipIndex != selectedClipIndex_) {
 			// If different gameObject/clip, start animation
@@ -408,7 +408,7 @@ void ImGuiManager::drawAnimationControlPanel(Scene& scene)
 	ImGui::SameLine();
 
 	if (ImGui::Button("Stop", ImVec2(60, 30))) {
-		std::cout << "[ImGui] Stop button pressed" << std::endl;
+		// std::cout << "[ImGui] Stop button pressed" << std::endl;
 		animStateRef.stop();
 
 		// Reset visually
@@ -537,24 +537,24 @@ void ImGuiManager::drawSceneControlWindow(Scene& scene)
 	bool& showBBox = rendererRef.showBBox;
 
 	if (ImGui::Checkbox("Show Model", &showModels))
-		std::cout << "[ImGui INFO] Setting model visibility to: " << (showModels ? "ON" : "OFF") << std::endl;
+		// std::cout << "[ImGui INFO] Setting model visibility to: " << (showModels ? "ON" : "OFF") << std::endl;
 
-	if (ImGui::Checkbox("Show Wire Frame", &showWireFrame))
-		std::cout << "[ImGui INFO] Setting Wire Frame visibility to: " << (showWireFrame ? "ON" : "OFF") << std::endl;
+		if (ImGui::Checkbox("Show Wire Frame", &showWireFrame))
+			// std::cout << "[ImGui INFO] Setting Wire Frame visibility to: " << (showWireFrame ? "ON" : "OFF") << std::endl;
 
-	if (ImGui::Checkbox("Show Skybox", &showSkybox))
-		std::cout << "[ImGui INFO] Setting Skybox visibility to: " << (showSkybox ? "ON" : "OFF") << std::endl;
+			if (ImGui::Checkbox("Show Skybox", &showSkybox))
+				// std::cout << "[ImGui INFO] Setting Skybox visibility to: " << (showSkybox ? "ON" : "OFF") << std::endl;
 
-	if (ImGui::Checkbox("Show Skeleton", &showSkeletons))
-		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showSkeletons ? "ON" : "OFF") << std::endl;
+				if (ImGui::Checkbox("Show Skeleton", &showSkeletons))
+					// std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showSkeletons ? "ON" : "OFF") << std::endl;
 
-	if (ImGui::Checkbox("Show Light Point", &showLightPoint))
-		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showLightPoint ? "ON" : "OFF") << std::endl;
+					if (ImGui::Checkbox("Show Light Point", &showLightPoint))
+						// std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showLightPoint ? "ON" : "OFF") << std::endl;
 
-	if (ImGui::Checkbox("Show AABB Bounding Box", &showBBox))
-		std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showBBox ? "ON" : "OFF") << std::endl;
+						if (ImGui::Checkbox("Show AABB Bounding Box", &showBBox))
+							// std::cout << "[ImGui INFO] Setting skeleton visibility to: " << (showBBox ? "ON" : "OFF") << std::endl;
 
-	ImGui::Separator();
+							ImGui::Separator();
 
 	// Camera section
 	if (ImGui::CollapsingHeader("Camera Controls", ImGuiTreeNodeFlags_DefaultOpen)) {

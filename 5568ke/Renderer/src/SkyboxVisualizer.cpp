@@ -29,14 +29,14 @@ void SkyboxVisualizer::init()
 	cubemapShader = std::make_shared<Shader>();
 	cubemapShader->resetShaderPath("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 
-	std::cout << "[SkyboxVisualizer] Initialized with custom skybox shaders" << std::endl;
+	// std::cout << "[SkyboxVisualizer] Initialized with custom skybox shaders" << std::endl;
 
 	// Hard-code the skybox now.
 	std::string skyboxPath = "assets/models/fantasy_landscape_3/scene.gltf";
-	std::cout << "[SkyboxVisualizer] Loading skybox from: " << skyboxPath << std::endl;
+	// std::cout << "[SkyboxVisualizer] Loading skybox from: " << skyboxPath << std::endl;
 
 	bool skyboxLoaded = loadSkyboxFromGltf(skyboxPath);
-	std::cout << "[SkyboxVisualizer] Skybox loaded: " << (skyboxLoaded ? "SUCCESS" : "FAILED") << std::endl;
+	// std::cout << "[SkyboxVisualizer] Skybox loaded: " << (skyboxLoaded ? "SUCCESS" : "FAILED") << std::endl;
 
 	// Set up the standard cubemap mesh (even if we don't use it initially)
 	setupCubemapMesh();
@@ -75,18 +75,18 @@ bool SkyboxVisualizer::loadSkyboxFromGltf(std::string const& gltfPath)
 		skyboxModel = registry.loadModel(gltfPath, "skybox_model");
 
 		if (!skyboxModel) {
-			std::cout << "[SkyboxVisualizer ERROR] Failed to load GLTF skybox: " << gltfPath << std::endl;
+			// std::cout << "[SkyboxVisualizer ERROR] Failed to load GLTF skybox: " << gltfPath << std::endl;
 			return false;
 		}
 
 		// Successfully loaded
-		std::cout << "[SkyboxVisualizer] Successfully loaded GLTF skybox: " << gltfPath << std::endl;
+		// std::cout << "[SkyboxVisualizer] Successfully loaded GLTF skybox: " << gltfPath << std::endl;
 		skyboxPath = gltfPath;
 		skyboxType = SkyboxType::GLTF_MODEL;
 
 		return true;
 	} catch (std::exception const& e) {
-		std::cout << "[SkyboxVisualizer ERROR] Exception loading GLTF skybox: " << e.what() << std::endl;
+		// std::cout << "[SkyboxVisualizer ERROR] Exception loading GLTF skybox: " << e.what() << std::endl;
 		return false;
 	}
 }
@@ -96,7 +96,7 @@ bool SkyboxVisualizer::loadSkyboxFromCubemap(std::string const& directory)
 {
 	std::filesystem::path dirPath(directory);
 	if (!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath)) {
-		std::cout << "[SkyboxVisualizer ERROR] Invalid cubemap directory: " << directory << std::endl;
+		// std::cout << "[SkyboxVisualizer ERROR] Invalid cubemap directory: " << directory << std::endl;
 		return false;
 	}
 
@@ -108,7 +108,7 @@ bool SkyboxVisualizer::loadSkyboxFromCubemap(std::string const& directory)
 	for (auto const& face : faceNames) {
 		std::filesystem::path facePath = dirPath / face;
 		if (!std::filesystem::exists(facePath)) {
-			std::cout << "[SkyboxVisualizer ERROR] Missing cubemap face: " << facePath.string() << std::endl;
+			// std::cout << "[SkyboxVisualizer ERROR] Missing cubemap face: " << facePath.string() << std::endl;
 			return false;
 		}
 		facePaths.push_back(facePath.string());
@@ -116,13 +116,13 @@ bool SkyboxVisualizer::loadSkyboxFromCubemap(std::string const& directory)
 
 	// Create the cubemap texture
 	if (!createCubemapFromImages(facePaths)) {
-		std::cout << "[SkyboxVisualizer ERROR] Failed to create cubemap texture" << std::endl;
+		// std::cout << "[SkyboxVisualizer ERROR] Failed to create cubemap texture" << std::endl;
 		return false;
 	}
 
 	skyboxType = SkyboxType::CUBEMAP;
 	skyboxPath = directory;
-	std::cout << "[SkyboxVisualizer] Successfully loaded cubemap skybox from: " << directory << std::endl;
+	// std::cout << "[SkyboxVisualizer] Successfully loaded cubemap skybox from: " << directory << std::endl;
 	return true;
 }
 
@@ -254,7 +254,7 @@ bool SkyboxVisualizer::createCubemapFromImages(std::vector<std::string> const& f
 {
 	// Make sure we have exactly 6 images for the cubemap
 	if (faceImages.size() != 6) {
-		std::cout << "[SkyboxVisualizer ERROR] Cubemap requires exactly 6 images" << std::endl;
+		// std::cout << "[SkyboxVisualizer ERROR] Cubemap requires exactly 6 images" << std::endl;
 		return false;
 	}
 
@@ -268,9 +268,9 @@ bool SkyboxVisualizer::createCubemapFromImages(std::vector<std::string> const& f
 
 	// In a real implementation, we would use stb_image or another library to load the images
 	// This is simplified as a placeholder
-	std::cout << "[SkyboxVisualizer] Cubemap textures would be loaded from: " << std::endl;
+	// std::cout << "[SkyboxVisualizer] Cubemap textures would be loaded from: " << std::endl;
 	for (size_t i = 0; i < faceImages.size(); i++) {
-		std::cout << "  - Face " << i << ": " << faceImages[i] << std::endl;
+		// std::cout << "  - Face " << i << ": " << faceImages[i] << std::endl;
 	}
 
 	// Set texture parameters

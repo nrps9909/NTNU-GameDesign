@@ -68,7 +68,7 @@ void Model::updateLocalMatrices()
 		return;
 	}
 
-	std::cout << "[Model] Updating matrices" << std::endl;
+	// std::cout << "[Model] Updating matrices" << std::endl;
 	NodeUtil::updateNodeListLocalTRSMatrix(nodes);
 	NodeUtil::updateNodeTreeMatricesRecursive(rootNode, glm::mat4(1.0f));
 	NodeUtil::updateNodeListJointMatrices(*this);

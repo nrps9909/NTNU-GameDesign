@@ -61,7 +61,7 @@ void Camera::updateMatrices(GLFWwindow* w)
 
 	// Prevent division by zero or negative aspect ratio
 	if (fbW <= 0 || fbH <= 0) {
-		std::cout << "[Camera] Warning: Invalid framebuffer size: " << fbW << "x" << fbH << std::endl;
+		// std::cout << "[Camera] Warning: Invalid framebuffer size: " << fbW << "x" << fbH << std::endl;
 		fbW = fbW <= 0 ? 1 : fbW;
 		fbH = fbH <= 0 ? 1 : fbH;
 	}

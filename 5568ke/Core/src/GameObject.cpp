@@ -153,16 +153,16 @@ bool GameObject::isInFrustum(glm::mat4 const& viewProjectionMatrix) const
 // Debug and utility
 void GameObject::printInfo() const
 {
-	std::cout << "GameObject Info:" << std::endl;
-	std::cout << "  Name: " << (name.empty() ? "Unnamed" : name) << std::endl;
-	std::cout << "  Tag: " << (tag.empty() ? "None" : tag) << std::endl;
-	std::cout << "  Layer: " << layer << std::endl;
-	std::cout << "  Visible: " << (visible ? "Yes" : "No") << std::endl;
-	std::cout << "  Active: " << (active ? "Yes" : "No") << std::endl;
-	std::cout << "  Position: " << glm::to_string(position) << std::endl;
-	std::cout << "  Rotation: " << glm::to_string(rotationDeg) << std::endl;
-	std::cout << "  Scale: " << glm::to_string(scale) << std::endl;
-	std::cout << "  Has Model: " << (model_ ? "Yes" : "No") << std::endl;
+	// std::cout << "GameObject Info:" << std::endl;
+	// std::cout << "  Name: " << (name.empty() ? "Unnamed" : name) << std::endl;
+	// std::cout << "  Tag: " << (tag.empty() ? "None" : tag) << std::endl;
+	// std::cout << "  Layer: " << layer << std::endl;
+	// std::cout << "  Visible: " << (visible ? "Yes" : "No") << std::endl;
+	// std::cout << "  Active: " << (active ? "Yes" : "No") << std::endl;
+	// std::cout << "  Position: " << glm::to_string(position) << std::endl;
+	// std::cout << "  Rotation: " << glm::to_string(rotationDeg) << std::endl;
+	// std::cout << "  Scale: " << glm::to_string(scale) << std::endl;
+	// std::cout << "  Has Model: " << (model_ ? "Yes" : "No") << std::endl;
 }
 
 std::string GameObject::toString() const
