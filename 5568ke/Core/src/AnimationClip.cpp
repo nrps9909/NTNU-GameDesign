@@ -15,19 +15,19 @@ AnimationClip::AnimationClip(std::string const& name) : clipName(name) {}
 
 void AnimationClip::addChannel(tinygltf::Model const& model, tinygltf::Animation const& anim, tinygltf::AnimationChannel const& channel)
 {
-	std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Creating channel" << std::endl;
+	// std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Creating channel" << std::endl;
 	auto animChannel = std::make_shared<AnimationChannel>();
 
 	try {
-		std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Loading channel data" << std::endl;
+		// std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Loading channel data" << std::endl;
 		animChannel->loadChannelData(model, anim, channel);
-		std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Channel data loaded successfully" << std::endl;
+		// std::cout << "[AnimationClip INFO] AnimationClip::addChannel - Channel data loaded successfully" << std::endl;
 		channels_.push_back(animChannel);
 	} catch (std::exception const& e) {
-		std::cout << "[AnimationClip ERROR] AnimationClip::addChannel - Exception: " << e.what() << std::endl;
+		// std::cout << "[AnimationClip ERROR] AnimationClip::addChannel - Exception: " << e.what() << std::endl;
 		throw;
 	} catch (...) {
-		std::cout << "[AnimationClip ERROR] AnimationClip::addChannel - Unknown exception" << std::endl;
+		// std::cout << "[AnimationClip ERROR] AnimationClip::addChannel - Unknown exception" << std::endl;
 		throw;
 	}
 }
@@ -38,7 +38,7 @@ void AnimationClip::setAnimationFrame(std::vector<std::shared_ptr<Node>> const& 
 		return;
 	}
 
-	std::cout << "[AnimationClip] Setting frame at time " << time << " for " << clipName << std::endl;
+	// std::cout << "[AnimationClip] Setting frame at time " << time << " for " << clipName << std::endl;
 
 	// Apply all channels
 	for (auto const& channel : channels_) {
@@ -46,14 +46,13 @@ void AnimationClip::setAnimationFrame(std::vector<std::shared_ptr<Node>> const& 
 			continue; // Skip invalid channels
 
 		int targetNode = channel->targetNode;
-		if (targetNode < 0 || targetNode >= nodes.size() || !nodes[targetNode])
+		if (targetNode < 0 || static_cast<std::size_t>(targetNode) >= nodes.size() || !nodes[targetNode])
 			continue; // Skip invalid target nodes
 
 		auto& node = nodes[targetNode];
 
 		// Get the node's current transforms for debugging
 		glm::vec3 oldTranslation = node->translation;
-		glm::quat oldRotation = node->rotation;
 		glm::vec3 oldScale = node->scale;
 
 		// Apply the animation transforms
@@ -71,13 +70,13 @@ void AnimationClip::setAnimationFrame(std::vector<std::shared_ptr<Node>> const& 
 
 		// Debug output for significant changes
 		if (glm::length(node->translation - oldTranslation) > 1.0f) {
-			std::cout << "[AnimationClip WARNING] Large translation change in node " << targetNode << ": from " << glm::length(oldTranslation) << " to "
-								<< glm::length(node->translation) << std::endl;
+			// std::cout << "[AnimationClip WARNING] Large translation change in node " << targetNode << ": from " << glm::length(oldTranslation) << " to "
+			// << glm::length(node->translation) << std::endl;
 		}
 
 		if (glm::length(node->scale - oldScale) > 1.0f) {
-			std::cout << "[AnimationClip WARNING] Large scale change in node " << targetNode << ": from " << glm::length(oldScale) << " to "
-								<< glm::length(node->scale) << std::endl;
+			// std::cout << "[AnimationClip WARNING] Large scale change in node " << targetNode << ": from " << glm::length(oldScale) << " to "
+			// << glm::length(node->scale) << std::endl;
 		}
 	}
 

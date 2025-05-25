@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "CollisionSystem.hpp"
+#include "DialogSystem.hpp"
 #include "GlobalAnimationState.hpp"
 #include "ImGuiManager.hpp"
 #include "ModelRegistry.hpp"
@@ -23,6 +25,8 @@ public:
 	ModelRegistry& registryRef = ModelRegistry::getInstance();
 	Renderer& rendererRef = Renderer::getInstance();
 	GlobalAnimationState& animStateRef = GlobalAnimationState::getInstance();
+	CollisionSystem& collisionSysRef = CollisionSystem::getInstance();
+	DialogSystem& dialogSysRef = DialogSystem::getInstance();
 
 private:
 	// Initialization methods
@@ -37,7 +41,6 @@ private:
 	void loop_();
 	void processInput_(float dt);
 
-	// New tick and render methods
 	void tick_(float dt);
 	void render_();
 

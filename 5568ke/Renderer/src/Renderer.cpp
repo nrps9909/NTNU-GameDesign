@@ -36,20 +36,20 @@ void Renderer::init()
 	// Initialize skeleton visualizer
 	skeletonVisualizerRef.init();
 	shaders_["skeleton"] = skeletonVisualizerRef.skeletonShader;
-	std::cout << "[Renderer] SkeletonVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] SkeletonVisualizer initialized" << std::endl;
 
 	lightVisualizerRef.init();
 	shaders_["lightPoint"] = lightVisualizerRef.lightPointShader;
-	std::cout << "[Renderer] LightPointVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] LightPointVisualizer initialized" << std::endl;
 
 	boundingBoxVisualizerRef.init();
 	shaders_["boundingBox"] = boundingBoxVisualizerRef.boxShader;
-	std::cout << "[Renderer] BoundingBoxVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] BoundingBoxVisualizer initialized" << std::endl;
 
 	skyboxVisualizerRef.init();
 	shaders_["skybox_model"] = skyboxVisualizerRef.skyboxShader;
 	shaders_["skybox_cubemap"] = skyboxVisualizerRef.cubemapShader;
-	std::cout << "[Renderer] SkyboxVisualizer initialized" << std::endl;
+	// std::cout << "[Renderer] SkyboxVisualizer initialized" << std::endl;
 }
 
 void Renderer::beginFrame(int w, int h, glm::vec3 const& c)
@@ -113,10 +113,11 @@ void Renderer::drawModels_(Scene const& scene)
 	}
 
 	// Draw all visible entities
-	for (auto const& entity : scene.ents) {
-		if (!entity.visible || !entity.model)
+	for (auto const& goPtr : scene.gameObjects) {
+		if (!goPtr || !goPtr->visible || !goPtr->getModel())
 			continue;
 
+		GameObject& gameObject = *goPtr;
 		if (showWireFrame) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
@@ -127,18 +128,18 @@ void Renderer::drawModels_(Scene const& scene)
 		// Choose shader based on if the model has joint matrices
 		Shader const* shaderToUse = mainShader_.get();
 
-		if (skinnedShader_ && !entity.model->jointMatrices.empty() && entity.model->animations.size() > 0)
+		if (skinnedShader_ && !gameObject.getModel()->jointMatrices.empty() && gameObject.getModel()->animations.size() > 0)
 			shaderToUse = skinnedShader_.get();
 
-		shaderToUse->bind();																// Bind the appropriate shader
-		entity.model->draw(*shaderToUse, entity.transform); // Draw the model with the scaled model matrix
+		shaderToUse->bind();																									// Bind the appropriate shader
+		gameObject.getModel()->draw(*shaderToUse, gameObject.getTransform()); // Draw the model with the scaled model matrix
 
-		if (skeletonVisualizerRef.hasSkeletonData(entity.model)) {
+		if (skeletonVisualizerRef.hasSkeletonData(gameObject.getModel())) {
 
 			// Draw skeleton if enabled
 			if (showSkeletons) {
 				// Draw debug visualization
-				skeletonVisualizerRef.draw(entity, scene.cam);
+				skeletonVisualizerRef.draw(gameObject, scene.cam);
 
 				// Rebind main shader after drawing lines
 				mainShader_->bind();

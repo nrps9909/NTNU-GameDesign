@@ -43,7 +43,8 @@ void updateNodeListJointMatrices(Model& model)
 		int nodeIndex = node->nodeNum;
 		if (nodeIndex < model.nodeToJointMapping.size()) {
 			int jointIndex = model.nodeToJointMapping[nodeIndex];
-			if (jointIndex >= 0 && jointIndex < model.jointMatrices.size() && jointIndex < model.inverseBindMatrices.size()) {
+			if (jointIndex >= 0 && static_cast<std::size_t>(jointIndex) < model.jointMatrices.size() &&
+					static_cast<std::size_t>(jointIndex) < model.inverseBindMatrices.size()) {
 				model.jointMatrices[jointIndex] = node->getNodeMatrix() * model.inverseBindMatrices[jointIndex];
 			}
 		}
@@ -67,10 +68,10 @@ void Node::updateLocalTRSMatrix()
 
 	// Debug log for non-identity matrices
 	if (glm::length(translation) > 0.01f || std::abs(glm::length(rotation) - 1.0f) > 0.01f || glm::length(scale - glm::vec3(1.0f)) > 0.01f) {
-		std::cout << "[Node INFO] Node " << nodeNum << " local matrix updated: "
-							<< "T(" << translation.x << "," << translation.y << "," << translation.z << ") "
-							<< "R(" << rotation.w << "," << rotation.x << "," << rotation.y << "," << rotation.z << ") "
-							<< "S(" << scale.x << "," << scale.y << "," << scale.z << ")" << std::endl;
+		// std::cout << "[Node INFO] Node " << nodeNum << " local matrix updated: "
+		// << "T(" << translation.x << "," << translation.y << "," << translation.z << ") "
+		// << "R(" << rotation.w << "," << rotation.x << "," << rotation.y << "," << rotation.z << ") "
+		// << "S(" << scale.x << "," << scale.y << "," << scale.z << ")" << std::endl;
 	}
 }
 
@@ -82,6 +83,6 @@ void Node::updateNodeMatrix(glm::mat4 const& parentMatrix)
 	// Debug log the result if it's significantly different from identity
 	glm::vec3 position = glm::vec3(nodeMatrix_[3]);
 	if (glm::length(position) > 0.01f) {
-		std::cout << "[Node INFO] Node " << nodeNum << " local space position: " << position.x << ", " << position.y << ", " << position.z << std::endl;
+		// std::cout << "[Node INFO] Node " << nodeNum << " local space position: " << position.x << ", " << position.y << ", " << position.z << std::endl;
 	}
 }

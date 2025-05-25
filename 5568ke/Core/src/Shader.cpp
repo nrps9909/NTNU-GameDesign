@@ -18,7 +18,7 @@ unsigned int compileStage(std::string const& src, GLenum type)
 	if (!ok) {
 		char log[1024];
 		glGetShaderInfoLog(id, 1024, nullptr, log);
-		std::cout << "[Shader ERROR] Shader error:\n" << log << '\n';
+		// std::cout << "[Shader ERROR] Shader error:\n" << log << '\n';
 	}
 	return id;
 }
@@ -27,7 +27,7 @@ std::string loadFile(std::string const& path)
 {
 	std::ifstream f(path);
 	if (!f) {
-		std::cout << "[Shader ERROR] cannot open " << path << '\n';
+		// std::cout << "[Shader ERROR] cannot open " << path << '\n';
 		return {};
 	}
 	std::stringstream ss;
@@ -64,14 +64,14 @@ void Shader::reload()
 	if (!success) {
 		char infoLog[512];
 		glGetShaderInfoLog(vs, 512, NULL, infoLog);
-		std::cout << "[Shader ERROR] Vertex shader compilation failed: " << infoLog << std::endl;
+		// std::cout << "[Shader ERROR] Vertex shader compilation failed: " << infoLog << std::endl;
 	}
 
 	glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		char infoLog[512];
 		glGetShaderInfoLog(fs, 512, NULL, infoLog);
-		std::cout << "[Shader ERROR] Fragment shader compilation failed: " << infoLog << std::endl;
+		// std::cout << "[Shader ERROR] Fragment shader compilation failed: " << infoLog << std::endl;
 	}
 
 	// Check program linking status
@@ -79,7 +79,7 @@ void Shader::reload()
 	if (!success) {
 		char infoLog[512];
 		glGetProgramInfoLog(program_, 512, NULL, infoLog);
-		std::cout << "[Shader ERROR] Shader program linking failed: " << infoLog << std::endl;
+		// std::cout << "[Shader ERROR] Shader program linking failed: " << infoLog << std::endl;
 	}
 
 	glDeleteShader(vs);

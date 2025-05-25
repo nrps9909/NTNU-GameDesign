@@ -37,16 +37,16 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 
 	// Handle loading errors
 	if (!warn.empty()) {
-		std::cout << "[GltfLoader INFO] GLTF warning: " << warn << std::endl;
+		// std::cout << "[GltfLoader INFO] GLTF warning: " << warn << std::endl;
 	}
 
 	if (!err.empty()) {
-		std::cout << "[GltfLoader INFO] GLTF error: " << err << std::endl;
+		// std::cout << "[GltfLoader INFO] GLTF error: " << err << std::endl;
 		return nullptr;
 	}
 
 	if (!ret) {
-		std::cout << "[GltfLoader INFO] Failed to load GLTF file: " << path << std::endl;
+		// std::cout << "[GltfLoader INFO] Failed to load GLTF file: " << path << std::endl;
 		return nullptr;
 	}
 
@@ -54,23 +54,23 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 	std::shared_ptr<Model> model = std::make_shared<Model>();
 	model->meshNodeIndices.resize(gltfModel.meshes.size(), -1);
 
-	std::cout << "[GltfLoader INFO] GLTF file has:\n"
-						<< gltfModel.accessors.size() << " accessors\n"
-						<< gltfModel.animations.size() << " animations\n"
-						<< gltfModel.buffers.size() << " buffers\n"
-						<< gltfModel.bufferViews.size() << " bufferViews\n"
-						<< gltfModel.materials.size() << " materials\n"
-						<< gltfModel.meshes.size() << " meshes\n"
-						<< gltfModel.nodes.size() << " nodes\n"
-						<< gltfModel.textures.size() << " textures\n"
-						<< gltfModel.images.size() << " images\n"
-						<< gltfModel.skins.size() << " skins\n"
-						<< gltfModel.samplers.size() << " samplers\n"
-						<< gltfModel.cameras.size() << " cameras\n"
-						<< gltfModel.scenes.size() << " scenes\n"
-						<< gltfModel.lights.size() << " lights\n"
-						<< gltfModel.audioEmitters.size() << " audioEmitters\n"
-						<< gltfModel.audioSources.size() << " audioSources\n";
+	// std::cout << "[GltfLoader INFO] GLTF file has:\n"
+	// << gltfModel.accessors.size() << " accessors\n"
+	// << gltfModel.animations.size() << " animations\n"
+	// << gltfModel.buffers.size() << " buffers\n"
+	// << gltfModel.bufferViews.size() << " bufferViews\n"
+	// << gltfModel.materials.size() << " materials\n"
+	// << gltfModel.meshes.size() << " meshes\n"
+	// << gltfModel.nodes.size() << " nodes\n"
+	// << gltfModel.textures.size() << " textures\n"
+	// << gltfModel.images.size() << " images\n"
+	// << gltfModel.skins.size() << " skins\n"
+	// << gltfModel.samplers.size() << " samplers\n"
+	// << gltfModel.cameras.size() << " cameras\n"
+	// << gltfModel.scenes.size() << " scenes\n"
+	// << gltfModel.lights.size() << " lights\n"
+	// << gltfModel.audioEmitters.size() << " audioEmitters\n"
+	// << gltfModel.audioSources.size() << " audioSources\n";
 
 	// Process all meshes in the GLTF file
 	for (tinygltf::Mesh& mesh : gltfModel.meshes) {
@@ -91,9 +91,9 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 	// Map each mesh to its node
 	for (size_t i = 0; i < gltfModel.nodes.size(); i++) {
 		auto const& node = gltfModel.nodes[i];
-		if (node.mesh >= 0 && node.mesh < model->meshNodeIndices.size()) {
+		if (node.mesh >= 0 && static_cast<std::size_t>(node.mesh) < model->meshNodeIndices.size()) {
 			model->meshNodeIndices[node.mesh] = i;
-			std::cout << "[GltfLoader] Node " << i << " references mesh " << node.mesh << std::endl;
+			// std::cout << "[GltfLoader] Node " << i << " references mesh " << node.mesh << std::endl;
 		}
 	}
 
@@ -101,7 +101,7 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 	loadNodeHierarchy_(model, gltfModel);
 
 	if (!gltfModel.skins.empty()) {
-		std::cout << "[GltfLoader INFO] Find skin data, starting to load skin data." << std::endl;
+		// std::cout << "[GltfLoader INFO] Find skin data, starting to load skin data." << std::endl;
 		loadSkinData_(model, gltfModel);
 	}
 
@@ -109,13 +109,13 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 	if (!gltfModel.animations.empty()) {
 		loadAnimations_(model, gltfModel);
 		model->updateLocalMatrices();
-		std::cout << "[GltfLoader INFO] Loaded " << model->animations.size() << " animation clips" << std::endl;
+		// std::cout << "[GltfLoader INFO] Loaded " << model->animations.size() << " animation clips" << std::endl;
 	}
 
 	if (model->rootNode) {
 		// Calculate all node matrices starting from the root
 		NodeUtil::updateNodeTreeMatricesRecursive(model->rootNode, glm::mat4(1.0f));
-		std::cout << "[GltfLoader] Node matrices calculated for static transforms" << std::endl;
+		// std::cout << "[GltfLoader] Node matrices calculated for static transforms" << std::endl;
 	}
 
 	// Calculate global bounding box and store on the model
@@ -123,9 +123,9 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 		BBoxUtil::updateLocalBBox(*model);
 
 		// Print global bounding box info
-		std::cout << "[GltfLoader INFO] Model global bounding box: min(" << model->localSpaceBBox.min.x << ", " << model->localSpaceBBox.min.y << ", "
-							<< model->localSpaceBBox.min.z << "), max(" << model->localSpaceBBox.max.x << ", " << model->localSpaceBBox.max.y << ", "
-							<< model->localSpaceBBox.max.z << ")" << std::endl;
+		// std::cout << "[GltfLoader INFO] Model global bounding box: min(" << model->localSpaceBBox.min.x << ", " << model->localSpaceBBox.min.y << ", "
+		// << model->localSpaceBBox.min.z << "), max(" << model->localSpaceBBox.max.x << ", " << model->localSpaceBBox.max.y << ", " << model->localSpaceBBox.max.z
+		// << ")" << std::endl;
 	}
 
 	return model;
@@ -133,14 +133,14 @@ std::shared_ptr<Model> GltfLoader::loadGltf_(std::string const& path, MaterialTy
 
 Texture* GltfLoader::loadTexture_(tinygltf::Model const& model, int textureIndex, TextureType type)
 {
-	if (textureIndex < 0 || textureIndex >= model.textures.size())
+	if (textureIndex < 0 || static_cast<std::size_t>(textureIndex) >= model.textures.size())
 		return nullptr;
 
 	auto* texture = new Texture();
 	texture->type = type;
 
 	tinygltf::Texture const& gltfTexture = model.textures[textureIndex];
-	if (gltfTexture.source < 0 || gltfTexture.source >= model.images.size()) {
+	if (gltfTexture.source < 0 || static_cast<std::size_t>(gltfTexture.source) >= model.images.size()) {
 		delete texture;
 		return nullptr;
 	}
@@ -176,8 +176,8 @@ Texture* GltfLoader::loadTexture_(tinygltf::Model const& model, int textureIndex
 		pixelType = GL_FLOAT;
 	}
 
-	std::cout << "[GltfLoader INFO] Loading texture: " << image.uri << " (" << image.width << "x" << image.height << ", components: " << image.component << ")"
-						<< std::endl;
+	// std::cout << "[GltfLoader INFO] Loading texture: " << image.uri << " (" << image.width << "x" << image.height << ", components: " << image.component << ")"
+	// << std::endl;
 
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.width, image.height, 0, format, pixelType, image.image.data());
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -200,14 +200,14 @@ Material* GltfLoader::createMaterial_(tinygltf::Model const& model, tinygltf::Pr
 		BlinnPhongMaterial* material = new BlinnPhongMaterial();
 
 		// Check if material exists in the model
-		if (primitive.material >= 0 && primitive.material < model.materials.size()) {
+		if (primitive.material >= 0 && static_cast<std::size_t>(primitive.material) < model.materials.size()) {
 			tinygltf::Material const& mat = model.materials[primitive.material];
 
 			// Set base color if available
 			if (mat.pbrMetallicRoughness.baseColorFactor.size() >= 3) {
 				material->albedo =
 						glm::vec3(mat.pbrMetallicRoughness.baseColorFactor[0], mat.pbrMetallicRoughness.baseColorFactor[1], mat.pbrMetallicRoughness.baseColorFactor[2]);
-				std::cout << "[GltfLoader INFO] Material albedo: " << material->albedo.x << ", " << material->albedo.y << ", " << material->albedo.z << std::endl;
+				// std::cout << "[GltfLoader INFO] Material albedo: " << material->albedo.x << ", " << material->albedo.y << ", " << material->albedo.z << std::endl;
 			}
 
 			// Set roughness as inverse of shininess
@@ -215,19 +215,19 @@ Material* GltfLoader::createMaterial_(tinygltf::Model const& model, tinygltf::Pr
 				// Convert roughness to shininess (inverse relationship)
 				float roughness = mat.pbrMetallicRoughness.roughnessFactor;
 				material->shininess = std::max(2.0f, 128.0f * (1.0f - roughness));
-				std::cout << "[GltfLoader INFO] Material shininess: " << material->shininess << std::endl;
+				// std::cout << "[GltfLoader INFO] Material shininess: " << material->shininess << std::endl;
 			}
 
 			// Load diffuse texture if available
 			if (mat.pbrMetallicRoughness.baseColorTexture.index >= 0) {
 				material->diffuseMap = loadTexture_(model, mat.pbrMetallicRoughness.baseColorTexture.index, TextureType::Diffuse);
-				std::cout << "[GltfLoader INFO] Loaded diffuse texture" << std::endl;
+				// std::cout << "[GltfLoader INFO] Loaded diffuse texture" << std::endl;
 			}
 
 			// Check for additional textures that could be used for overlay
 			if (mat.normalTexture.index >= 0) {
 				material->overlayMap = loadTexture_(model, mat.normalTexture.index, TextureType::Normal);
-				std::cout << "[GltfLoader INFO] Loaded normal/overlay texture" << std::endl;
+				// std::cout << "[GltfLoader INFO] Loaded normal/overlay texture" << std::endl;
 			}
 		}
 
@@ -333,7 +333,7 @@ void GltfLoader::processMesh_(tinygltf::Model const& model, tinygltf::Mesh const
 				tinygltf::Buffer const& weightsBuffer = model.buffers[weightsBufferView.buffer];
 
 				// Debug output
-				std::cout << "[GltfLoader] Processing skinning data: " << count << " vertices, joint type: " << jointsAccessor.componentType << std::endl;
+				// std::cout << "[GltfLoader] Processing skinning data: " << count << " vertices, joint type: " << jointsAccessor.componentType << std::endl;
 
 				// Process each vertex's skinning data
 				for (size_t i = 0; i < count; i++) {
@@ -368,7 +368,7 @@ void GltfLoader::processMesh_(tinygltf::Model const& model, tinygltf::Mesh const
 					}
 				}
 
-				std::cout << "[GltfLoader] Successfully loaded skinning data" << std::endl;
+				// std::cout << "[GltfLoader] Successfully loaded skinning data" << std::endl;
 			}
 
 			// Process indices
@@ -424,7 +424,7 @@ void GltfLoader::processMesh_(tinygltf::Model const& model, tinygltf::Mesh const
 
 void GltfLoader::loadAnimations_(std::shared_ptr<Model> model, tinygltf::Model const& gltfModel)
 {
-	std::cout << "[GltfLoader INFO] Starting to load animations. Count: " << gltfModel.animations.size() << std::endl;
+	// std::cout << "[GltfLoader INFO] Starting to load animations. Count: " << gltfModel.animations.size() << std::endl;
 
 	// Clear any existing animations
 	model->animations.clear();
@@ -434,60 +434,60 @@ void GltfLoader::loadAnimations_(std::shared_ptr<Model> model, tinygltf::Model c
 
 		// Create animation clip
 		std::string clipName = anim.name.empty() ? "Animation_" + std::to_string(animIndex) : anim.name;
-		std::cout << "[GltfLoader INFO] Creating animation clip: " << clipName << std::endl;
+		// std::cout << "[GltfLoader INFO] Creating animation clip: " << clipName << std::endl;
 
 		auto clip = std::make_shared<AnimationClip>(clipName);
 
-		std::cout << "[GltfLoader INFO] Loading animation '" << clipName << "' with " << anim.channels.size() << " channels" << std::endl;
+		// std::cout << "[GltfLoader INFO] Loading animation '" << clipName << "' with " << anim.channels.size() << " channels" << std::endl;
 
 		// Process animation channels
 		for (size_t channelIndex = 0; channelIndex < anim.channels.size(); channelIndex++) {
 			auto const& channel = anim.channels[channelIndex];
-			std::cout << "[GltfLoader INFO] Processing channel " << channelIndex << ", target_node: " << channel.target_node
-								<< ", target_path: " << channel.target_path << ", sampler: " << channel.sampler << std::endl;
+			// std::cout << "[GltfLoader INFO] Processing channel " << channelIndex << ", target_node: " << channel.target_node
+			// << ", target_path: " << channel.target_path << ", sampler: " << channel.sampler << std::endl;
 
 			// Skip channels targeting nodes we don't have
-			if (channel.target_node < 0 || channel.target_node >= model->nodes.size()) {
-				std::cout << "[GltfLoader ERROR] Invalid target_node index: " << channel.target_node << std::endl;
+			if (channel.target_node < 0 || static_cast<std::size_t>(channel.target_node) >= model->nodes.size()) {
+				// std::cout << "[GltfLoader ERROR] Invalid target_node index: " << channel.target_node << std::endl;
 				continue;
 			}
 
 			// Skip invalid samplers
-			if (channel.sampler < 0 || channel.sampler >= anim.samplers.size()) {
-				std::cout << "[GltfLoader ERROR] Invalid sampler index: " << channel.sampler << std::endl;
+			if (channel.sampler < 0 || static_cast<std::size_t>(channel.sampler) >= anim.samplers.size()) {
+				// std::cout << "[GltfLoader ERROR] Invalid sampler index: " << channel.sampler << std::endl;
 				continue;
 			}
 
 			try {
 				clip->addChannel(gltfModel, anim, channel);
-				std::cout << "[GltfLoader INFO] Successfully added channel " << channelIndex << std::endl;
+				// std::cout << "[GltfLoader INFO] Successfully added channel " << channelIndex << std::endl;
 			} catch (std::exception const& e) {
-				std::cout << "[GltfLoader ERROR] Exception while adding channel: " << e.what() << std::endl;
+				// std::cout << "[GltfLoader ERROR] Exception while adding channel: " << e.what() << std::endl;
 			} catch (...) {
-				std::cout << "[GltfLoader ERROR] Unknown exception while adding channel" << std::endl;
+				// std::cout << "[GltfLoader ERROR] Unknown exception while adding channel" << std::endl;
 			}
 		}
 
 		// Only add the clip if it has valid channels
 		if (clip->getDuration() > 0) {
-			std::cout << "[GltfLoader INFO] Animation '" << clipName << "' has duration: " << clip->getDuration() << std::endl;
+			// std::cout << "[GltfLoader INFO] Animation '" << clipName << "' has duration: " << clip->getDuration() << std::endl;
 			model->animations.push_back(clip);
 		}
 		else {
-			std::cout << "[GltfLoader INFO] Skipping animation '" << clipName << "' with zero duration" << std::endl;
+			// std::cout << "[GltfLoader INFO] Skipping animation '" << clipName << "' with zero duration" << std::endl;
 		}
 	}
 
-	std::cout << "[GltfLoader INFO] Finished loading all animations. Total: " << model->animations.size() << std::endl;
+	// std::cout << "[GltfLoader INFO] Finished loading all animations. Total: " << model->animations.size() << std::endl;
 }
 
 void GltfLoader::loadNodeHierarchy_(std::shared_ptr<Model> model, tinygltf::Model const& gltfModel)
 {
-	std::cout << "[GltfLoader INFO] Starting to load node hierarchy" << std::endl;
+	// std::cout << "[GltfLoader INFO] Starting to load node hierarchy" << std::endl;
 
 	// Resize nodes vector to fit all nodes in the model
 	model->nodes.resize(gltfModel.nodes.size());
-	std::cout << "[GltfLoader INFO] Resized nodes vector to " << gltfModel.nodes.size() << " elements" << std::endl;
+	// std::cout << "[GltfLoader INFO] Resized nodes vector to " << gltfModel.nodes.size() << " elements" << std::endl;
 
 	// Find root node (usually the first node in the default scene)
 	int rootNodeIndex = 0;
@@ -495,45 +495,45 @@ void GltfLoader::loadNodeHierarchy_(std::shared_ptr<Model> model, tinygltf::Mode
 		rootNodeIndex = gltfModel.scenes[0].nodes[0];
 	}
 
-	std::cout << "[GltfLoader INFO] Model has " << gltfModel.nodes.size() << " nodes, root node is " << rootNodeIndex << std::endl;
+	// std::cout << "[GltfLoader INFO] Model has " << gltfModel.nodes.size() << " nodes, root node is " << rootNodeIndex << std::endl;
 
 	// Validate root node index
-	if (rootNodeIndex < 0 || rootNodeIndex >= gltfModel.nodes.size()) {
-		std::cout << "[GltfLoader ERROR] Invalid root node index: " << rootNodeIndex << std::endl;
+	if (rootNodeIndex < 0 || static_cast<std::size_t>(rootNodeIndex) >= gltfModel.nodes.size()) {
+		// std::cout << "[GltfLoader ERROR] Invalid root node index: " << rootNodeIndex << std::endl;
 		return;
 	}
 
 	try {
 		// Create the root node
-		std::cout << "[GltfLoader INFO] Creating root node with index " << rootNodeIndex << std::endl;
+		// std::cout << "[GltfLoader INFO] Creating root node with index " << rootNodeIndex << std::endl;
 		model->rootNode = NodeUtil::createRoot(rootNodeIndex);
 
 		if (!model->rootNode) {
-			std::cout << "[GltfLoader ERROR] Failed to create root node" << std::endl;
+			// std::cout << "[GltfLoader ERROR] Failed to create root node" << std::endl;
 			return;
 		}
 
 		model->nodes[rootNodeIndex] = model->rootNode;
 
 		// Process the entire node hierarchy starting from the root
-		std::cout << "[GltfLoader INFO] Processing node hierarchy starting from root" << std::endl;
+		// std::cout << "[GltfLoader INFO] Processing node hierarchy starting from root" << std::endl;
 		processNodeTreeRecursive_(model, gltfModel, rootNodeIndex, glm::mat4(1.0f));
 
-		std::cout << "[GltfLoader INFO] Node hierarchy loaded successfully" << std::endl;
+		// std::cout << "[GltfLoader INFO] Node hierarchy loaded successfully" << std::endl;
 	} catch (std::exception const& e) {
-		std::cout << "[GltfLoader ERROR] Exception while loading node hierarchy: " << e.what() << std::endl;
+		// std::cout << "[GltfLoader ERROR] Exception while loading node hierarchy: " << e.what() << std::endl;
 	} catch (...) {
-		std::cout << "[GltfLoader ERROR] Unknown exception while loading node hierarchy" << std::endl;
+		// std::cout << "[GltfLoader ERROR] Unknown exception while loading node hierarchy" << std::endl;
 	}
 }
 
 void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinygltf::Model const& gltfModel, int nodeIndex, glm::mat4 const& parentMatrix)
 {
-	std::cout << "[GltfLoader INFO] Processing node " << nodeIndex << std::endl;
+	// std::cout << "[GltfLoader INFO] Processing node " << nodeIndex << std::endl;
 
 	// Validate node index
-	if (nodeIndex < 0 || nodeIndex >= gltfModel.nodes.size()) {
-		std::cout << "[GltfLoader ERROR] Invalid node index: " << nodeIndex << std::endl;
+	if (nodeIndex < 0 || static_cast<std::size_t>(nodeIndex) >= gltfModel.nodes.size()) {
+		// std::cout << "[GltfLoader ERROR] Invalid node index: " << nodeIndex << std::endl;
 		return;
 	}
 
@@ -541,7 +541,7 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 	if (!model->nodes[nodeIndex]) {
 		// Create the node if it doesn't exist
 		model->nodes[nodeIndex] = std::make_shared<Node>(nodeIndex);
-		std::cout << "[GltfLoader INFO] Created missing node for index " << nodeIndex << std::endl;
+		// std::cout << "[GltfLoader INFO] Created missing node for index " << nodeIndex << std::endl;
 	}
 
 	tinygltf::Node const& node = gltfModel.nodes[nodeIndex];
@@ -550,11 +550,11 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 	// Set node name
 	std::string nodeName = node.name.empty() ? "Node_" + std::to_string(nodeIndex) : node.name;
 	currentNode->nodeName = nodeName;
-	std::cout << "[GltfLoader INFO] Node name: " << nodeName << std::endl;
+	// std::cout << "[GltfLoader INFO] Node name: " << nodeName << std::endl;
 
 	// Set transformation components, the matrix must be an 4x4 homogeneous matrix
 	if (!node.matrix.empty() && node.matrix.size() == 16) {
-		std::cout << "[GltfLoader INFO] Detected matrix in node " << nodeIndex << std::endl;
+		// std::cout << "[GltfLoader INFO] Detected matrix in node " << nodeIndex << std::endl;
 		glm::mat4 nodeMatrix = glm::make_mat4(node.matrix.data());
 
 		// Decompose the matrix into TRS components
@@ -569,13 +569,13 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 			currentNode->rotation = rotation;
 			currentNode->scale = scale;
 
-			std::cout << "[GltfLoader INFO] Node " << nodeIndex << " matrix decomposed to: "
-								<< "T(" << translation.x << "," << translation.y << "," << translation.z << ") "
-								<< "R(" << rotation.x << "," << rotation.y << "," << rotation.z << ") "
-								<< "S(" << scale.x << "," << scale.y << "," << scale.z << ")" << std::endl;
+			// std::cout << "[GltfLoader INFO] Node " << nodeIndex << " matrix decomposed to: "
+			// << "T(" << translation.x << "," << translation.y << "," << translation.z << ") "
+			// << "R(" << rotation.x << "," << rotation.y << "," << rotation.z << ") "
+			// << "S(" << scale.x << "," << scale.y << "," << scale.z << ")" << std::endl;
 		}
 		else {
-			std::cout << "[GltfLoader WARNING] Failed to decompose matrix for node " << nodeIndex << std::endl;
+			// std::cout << "[GltfLoader WARNING] Failed to decompose matrix for node " << nodeIndex << std::endl;
 			// Set identity transformation as fallback
 			currentNode->translation = glm::vec3(0.0f);
 			currentNode->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
@@ -587,10 +587,10 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 	if (!node.translation.empty()) {
 		if (node.translation.size() >= 3) {
 			currentNode->translation = glm::vec3(node.translation[0], node.translation[1], node.translation[2]);
-			std::cout << "[GltfLoader INFO] Node translation: " << node.translation[0] << ", " << node.translation[1] << ", " << node.translation[2] << std::endl;
+			// std::cout << "[GltfLoader INFO] Node translation: " << node.translation[0] << ", " << node.translation[1] << ", " << node.translation[2] << std::endl;
 		}
 		else {
-			std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete translation data" << std::endl;
+			// std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete translation data" << std::endl;
 		}
 	}
 
@@ -598,21 +598,21 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 		if (node.rotation.size() >= 4) {
 			currentNode->rotation =
 					glm::quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]); // w component comes last in the array but first in glm::quat
-			std::cout << "[GltfLoader INFO] Node rotation: " << node.rotation[0] << ", " << node.rotation[1] << ", " << node.rotation[2] << ", " << node.rotation[3]
-								<< std::endl;
+			// std::cout << "[GltfLoader INFO] Node rotation: " << node.rotation[0] << ", " << node.rotation[1] << ", " << node.rotation[2] << ", " <<
+			// node.rotation[3] << std::endl;
 		}
 		else {
-			std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete rotation data" << std::endl;
+			// std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete rotation data" << std::endl;
 		}
 	}
 
 	if (!node.scale.empty()) {
 		if (node.scale.size() >= 3) {
 			currentNode->scale = glm::vec3(node.scale[0], node.scale[1], node.scale[2]);
-			std::cout << "[GltfLoader INFO] Node scale: " << node.scale[0] << ", " << node.scale[1] << ", " << node.scale[2] << std::endl;
+			// std::cout << "[GltfLoader INFO] Node scale: " << node.scale[0] << ", " << node.scale[1] << ", " << node.scale[2] << std::endl;
 		}
 		else {
-			std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete scale data" << std::endl;
+			// std::cout << "[GltfLoader WARNING] Node " << nodeIndex << " has incomplete scale data" << std::endl;
 		}
 	}
 
@@ -622,28 +622,28 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 		currentNode->updateNodeMatrix(parentMatrix);
 
 		// Process child nodes
-		std::cout << "[GltfLoader INFO] Node " << nodeIndex << " has " << node.children.size() << " children" << std::endl;
+		// std::cout << "[GltfLoader INFO] Node " << nodeIndex << " has " << node.children.size() << " children" << std::endl;
 		for (size_t i = 0; i < node.children.size(); i++) {
 			int childIndex = node.children[i];
 
 			// Skip child nodes that are skins to avoid confusion in the hierarchy
-			if (childIndex >= 0 && childIndex < gltfModel.nodes.size() && gltfModel.nodes[childIndex].skin != -1) {
-				std::cout << "[GltfLoader INFO] Skipping skin child node " << childIndex << std::endl;
+			if (childIndex >= 0 && static_cast<std::size_t>(childIndex) < gltfModel.nodes.size() && gltfModel.nodes[childIndex].skin != -1) {
+				// std::cout << "[GltfLoader INFO] Skipping skin child node " << childIndex << std::endl;
 				continue;
 			}
 
 			// Validate child index
-			if (childIndex < 0 || childIndex >= gltfModel.nodes.size()) {
-				std::cout << "[GltfLoader ERROR] Invalid child node index: " << childIndex << std::endl;
+			if (childIndex < 0 || static_cast<std::size_t>(childIndex) >= gltfModel.nodes.size()) {
+				// std::cout << "[GltfLoader ERROR] Invalid child node index: " << childIndex << std::endl;
 				continue;
 			}
 
-			std::cout << "[GltfLoader INFO] Processing child node " << childIndex << std::endl;
+			// std::cout << "[GltfLoader INFO] Processing child node " << childIndex << std::endl;
 
 			// Create child node if it doesn't exist
 			if (!model->nodes[childIndex]) {
 				model->nodes[childIndex] = std::make_shared<Node>(childIndex);
-				std::cout << "[GltfLoader INFO] Created new node for child " << childIndex << std::endl;
+				// std::cout << "[GltfLoader INFO] Created new node for child " << childIndex << std::endl;
 			}
 
 			// Get the child node from the array
@@ -656,9 +656,9 @@ void GltfLoader::processNodeTreeRecursive_(std::shared_ptr<Model> model, tinyglt
 			processNodeTreeRecursive_(model, gltfModel, childIndex, currentNode->getNodeMatrix());
 		}
 	} catch (std::exception const& e) {
-		std::cout << "[GltfLoader ERROR] Exception while processing node " << nodeIndex << ": " << e.what() << std::endl;
+		// std::cout << "[GltfLoader ERROR] Exception while processing node " << nodeIndex << ": " << e.what() << std::endl;
 	} catch (...) {
-		std::cout << "[GltfLoader ERROR] Unknown exception while processing node " << nodeIndex << std::endl;
+		// std::cout << "[GltfLoader ERROR] Unknown exception while processing node " << nodeIndex << std::endl;
 	}
 }
 
@@ -682,7 +682,7 @@ void GltfLoader::loadSkinData_(std::shared_ptr<Model> model, tinygltf::Model con
 			model->inverseBindMatrices[i] = glm::make_mat4(data + i * 16);
 		}
 
-		std::cout << "[GltfLoader INFO] Loaded " << numMatrices << " inverse bind matrices" << std::endl;
+		// std::cout << "[GltfLoader INFO] Loaded " << numMatrices << " inverse bind matrices" << std::endl;
 	}
 
 	// Create joint mapping
@@ -748,7 +748,7 @@ void GltfLoader::loadSkinData_(std::shared_ptr<Model> model, tinygltf::Model con
 				}
 			}
 
-			std::cout << "[GltfLoader INFO] Loaded joint weights for " << vertexCount << " vertices" << std::endl;
+			// std::cout << "[GltfLoader INFO] Loaded joint weights for " << vertexCount << " vertices" << std::endl;
 		}
 	}
 }

@@ -9,6 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "AnimationClip.hpp"
+#include "Collider.hpp"
+#include "CollisionSystem.hpp"
+#include "DialogSystem.hpp"
 #include "Model.hpp"
 
 Application::Application() {}
@@ -51,8 +54,8 @@ void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int ac
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
+	// if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	// 	glfwSetWindowShouldClose(window, GL_TRUE);
 
 	if (key >= 0 && key < 1024) {
 		if (action == GLFW_PRESS)
@@ -103,45 +106,141 @@ void Application::initGL_()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	// Print some OpenGL information
-	std::cout << "[Application] OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-	std::cout << "[Application] GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-	std::cout << "[Application] Vendor: " << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "[Application] Renderer: " << glGetString(GL_RENDERER) << std::endl;
+	// std::cout << "[Application] OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+	// std::cout << "[Application] GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+	// std::cout << "[Application] Vendor: " << glGetString(GL_VENDOR) << std::endl;
+	// std::cout << "[Application] Renderer: " << glGetString(GL_RENDERER) << std::endl;
 }
 
 void Application::setupDefaultScene_()
 {
 	// Set up a default light (args: position, color, intensity)
-	sceneRef.addLight(glm::vec3(2.0f, 3.0f, 3.0f), glm::vec3(1.0f), 1.0f);
-
-	// Load the character model by default
-	// std::string const path = "assets/models/japanese_classroom/scene.gltf";
-	std::string const path = "assets/models/smo_ina/scene.gltf";
-	std::string const name = "ina";
-
-	// Add a character model
-	auto& registry = registryRef;
+	sceneRef.addLight(glm::vec3(1.0f, 7.0f, -4.0f), glm::vec3(1.0f), 2.0f);
 
 	try {
-		// Load the model
-		std::shared_ptr<Model> model = registry.loadModel(path, name);
-
-		if (model) {
-			// Add to scene
-			registry.addModelToScene(sceneRef, model);
-
-			// Store entity name in animation state
-			animStateRef.entityName = name;
-
-			// Set up camera
-			sceneRef.setupCameraToViewEntity(name);
-		}
-
 		// Initialize renderer
 		rendererRef.init();
 
+		{
+			// Load Ina
+			std::string const inaPath = "assets/models/smo_ina/scene.gltf";
+			std::string const inaName = "ina";
+			std::shared_ptr<Model> inaModel = registryRef.loadModel(inaPath, inaName);
+
+			if (inaModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, inaModel);
+				if (goPtr) {
+					goPtr->position = {5.2f, 0.12f, -1.0f};
+					goPtr->rotationDeg.y = 50;
+					auto modelCol = std::make_shared<AABBCollider>(goPtr);
+					collisionSysRef.add(modelCol);
+					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+					animStateRef.characterMoveMode = true;
+				}
+
+				// Store game object name in animation state
+				animStateRef.gameObjectName = inaName;
+
+				// Set up camera
+				sceneRef.setupCameraToViewGameObject(inaName);
+			}
+		}
+
+		{
+			// Load ame
+			std::string const amePath = "assets/models/smo_ame/scene.gltf";
+			std::string const ameName = "ame";
+			std::shared_ptr<Model> ameModel = registryRef.loadModel(amePath, ameName);
+
+			if (ameModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, ameModel);
+				if (goPtr) {
+					goPtr->position = {8.5f, 0.38f, 0.18f};
+					goPtr->rotationDeg.y = -90;
+					auto modelCol = std::make_shared<AABBCollider>(goPtr);
+					collisionSysRef.add(modelCol);
+					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+					animStateRef.characterMoveMode = true;
+				}
+			}
+		}
+
+		{
+			// Load calli
+			std::string const calliPath = "assets/models/smo_calli/scene.gltf";
+			std::string const calliName = "calli";
+			std::shared_ptr<Model> calliModel = registryRef.loadModel(calliPath, calliName);
+
+			if (calliModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, calliModel);
+				if (goPtr) {
+					goPtr->position = {6.369f, 0.12f, 2.834f};
+					goPtr->scale = glm::vec3(0.35f);
+					goPtr->rotationDeg.y = -161;
+					auto modelCol = std::make_shared<AABBCollider>(goPtr);
+					collisionSysRef.add(modelCol);
+					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+					animStateRef.characterMoveMode = true;
+				}
+			}
+		}
+
+		{
+			// Load kiara
+			std::string const kiaraPath = "assets/models/smo_kiara/scene.gltf";
+			std::string const kiaraName = "kiara";
+			std::shared_ptr<Model> kiaraModel = registryRef.loadModel(kiaraPath, kiaraName);
+
+			if (kiaraModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, kiaraModel);
+				if (goPtr) {
+					goPtr->position = {7.38f, 0.12f, -1.538f};
+					goPtr->rotationDeg.y = -42;
+					auto modelCol = std::make_shared<AABBCollider>(goPtr);
+					collisionSysRef.add(modelCol);
+					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+					animStateRef.characterMoveMode = true;
+				}
+			}
+		}
+
+		{
+			// Load gura
+			std::string const guraPath = "assets/models/smo_gura/scene.gltf";
+			std::string const guraName = "gura";
+			std::shared_ptr<Model> guraModel = registryRef.loadModel(guraPath, guraName);
+
+			if (guraModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, guraModel);
+				if (goPtr) {
+					goPtr->position = {7.744f, 0.12f, 2.284f};
+					goPtr->scale = glm::vec3(0.35f);
+					goPtr->rotationDeg.y = -141.503f;
+					auto modelCol = std::make_shared<AABBCollider>(goPtr);
+					collisionSysRef.add(modelCol);
+					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+					animStateRef.characterMoveMode = true;
+				}
+			}
+		}
+
+		{
+			// Load ClassRoom
+			std::string const classRoomPath = "assets/models/japanese_classroom/scene.gltf";
+			std::string const classRoomName = "classroom";
+			std::shared_ptr<Model> classRoomModel = registryRef.loadModel(classRoomPath, classRoomName);
+
+			if (classRoomModel) {
+				auto goPtr = registryRef.addModelToScene(sceneRef, classRoomModel);
+				if (goPtr) {
+					goPtr->position = {8.4f, 0.0f, 6.9f};
+					goPtr->scale = glm::vec3(2.6f);
+				}
+			}
+		}
+
 	} catch (std::runtime_error const& error) {
-		std::cout << error.what() << std::endl;
+		// std::cout << error.what() << std::endl;
 	}
 }
 
@@ -152,9 +251,10 @@ void Application::processInput_(float dt)
 	bool charMode = animStateRef.characterMoveMode;
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
 		if (charMode) {
-			auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-			if (entOpt) {
-				Entity& entity = entOpt->get();
+			auto goPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
+			if (goPtr) {
+				GameObject& gameObject = *goPtr;
+
 				glm::vec3 forward = glm::normalize(glm::vec3(sceneRef.cam.front.x, 0.0f, sceneRef.cam.front.z));
 				glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
 
@@ -170,21 +270,20 @@ void Application::processInput_(float dt)
 					move += right;
 
 				// Jump input
-				if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS && animStateRef.onGround) {
-					animStateRef.verticalVelocity = animStateRef.jumpSpeed;
-					animStateRef.onGround = false;
-				}
+				// if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
+				// 	gameObject.velocity.y = gameObject.jumpSpeed; // launch upward
+				// }
 
-				auto resetClipToFirstFrame = [&](Entity& e) {
-					if (!e.model || e.model->animations.empty())
+				auto resetClipToFirstFrame = [&](GameObject& gameObject) {
+					if (!gameObject.getModel() || gameObject.getModel()->animations.empty())
 						return;
 
 					int clip = animStateRef.clipIndex;
-					if (clip >= e.model->animations.size())
+					if (static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size())
 						clip = 0;
 
-					e.model->animations[clip]->setAnimationFrame(e.model->nodes, 0.0f);
-					e.model->updateLocalMatrices();
+					gameObject.getModel()->animations[clip]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
+					gameObject.getModel()->updateLocalMatrices();
 				};
 
 				bool isMoving = glm::length(move) > 0.0f;
@@ -194,23 +293,23 @@ void Application::processInput_(float dt)
 				if (isMoving) {
 					// Update position and direction
 					move = glm::normalize(move) * speed * dt;
-					entity.position += move;
+					gameObject.position += move;
 
 					glm::vec2 dir2D(move.x, move.z);
 					if (glm::length(dir2D) > 0.0f)
-						entity.rotationDeg.y = glm::degrees(atan2(move.x, move.z));
+						gameObject.rotationDeg.y = glm::degrees(atan2(move.x, move.z));
 
-					entity.rebuildTransform();
+					gameObject.updateTransformMatrix();
 				}
 
 				// Changed the statue of animation
 				if (startedMoving) {
-					animStateRef.play(std::min<int>(animStateRef.clipIndex, entity.model->animations.size() - 1), 0.0f);
-					resetClipToFirstFrame(entity); // Start from frame 0
+					animStateRef.play(std::min<int>(animStateRef.clipIndex, gameObject.getModel()->animations.size() - 1), 0.0f);
+					resetClipToFirstFrame(gameObject); // Start from frame 0
 				}
 				else if (stoppedMoving) {
 					animStateRef.stop();
-					resetClipToFirstFrame(entity); // Reset to frame 0
+					resetClipToFirstFrame(gameObject); // Reset to frame 0
 				}
 
 				animStateRef.wasMoving = isMoving;
@@ -225,17 +324,16 @@ void Application::processInput_(float dt)
 	// Update animation if playing
 	if (animStateRef.isAnimating) {
 		// Update animation
-		auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-		if (!entOpt)
+		auto gameObject = sceneRef.findGameObject(animStateRef.gameObjectName);
+		if (!gameObject)
 			return;
 
-		Entity& entity = entOpt->get();
-		auto model = entity.model;
+		auto model = gameObject->getModel();
 		if (!model || model->animations.empty())
 			return;
 
 		// Ensure valid clip index
-		if (animStateRef.clipIndex >= model->animations.size())
+		if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 			animStateRef.clipIndex = 0;
 
 		// Get clip
@@ -251,8 +349,8 @@ void Application::processInput_(float dt)
 		}
 
 		// Update animation frame
-		std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", entity=" << animStateRef.entityName
-							<< ", clip=" << animStateRef.clipIndex << std::endl;
+		// std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", gameObject=" << animStateRef.gameObjectName
+		// << ", clip=" << animStateRef.clipIndex << std::endl;
 
 		clip->setAnimationFrame(model->nodes, animStateRef.currentTime);
 		model->updateLocalMatrices();
@@ -264,23 +362,38 @@ void Application::tick_(float dt)
 	// Process input (keyboard, mouse)
 	processInput_(dt);
 
-	// Look up the target entity
-	auto entOpt = sceneRef.findEntity(animStateRef.entityName);
-	if (!entOpt)
+	// Look up the target animateGO
+	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName);
+	if (!animateGO)
 		return;
 
-	Entity& entity = entOpt->get();
+	for (auto& goPtr : sceneRef.gameObjects) {
+		auto& go = *goPtr;
+		if (!go.active)
+			continue;
+
+		// Apply gravity and integrate velocity
+		// go.velocity.y -= 9.8f * dt;
+		go.position += go.velocity * dt;
+		go.updateTransformMatrix();
+
+		if (go.worldBBox.min.y <= 0.0f) {
+			go.position.y = 0.0f;
+			go.velocity.y = 0.0f;
+			go.updateTransformMatrix();
+		}
+	}
 
 	// Update animation state
-	if (animStateRef.isAnimating && !animStateRef.entityName.empty()) {
-		auto model = entity.model;
+	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
+		auto model = animateGO->getModel();
 		if (!model || model->animations.empty()) {
-			// If the selected entity has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
+			// If the selected animateGO has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
 			animStateRef.stop();
 		}
 		else {
 			// Ensure clip index is within bounds
-			if (animStateRef.clipIndex >= model->animations.size())
+			if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 				animStateRef.clipIndex = 0;
 
 			// Advance animation time
@@ -299,26 +412,14 @@ void Application::tick_(float dt)
 		}
 	}
 
-	// Simple gravity and jump physics
-	if (animStateRef.characterMoveMode) {
-		animStateRef.verticalVelocity -= animStateRef.gravity * dt;
-		entity.position.y += animStateRef.verticalVelocity * dt;
-
-		// Ground collision at y = 0
-		if (entity.position.y <= 0.0f) {
-			entity.position.y = 0.0f;
-			animStateRef.verticalVelocity = 0.0f;
-			animStateRef.onGround = true;
-		}
-
-		entity.rebuildTransform();
-	}
+	collisionSysRef.update();
 
 	// Update camera position and matrices
-	if (animStateRef.characterMoveMode && !animStateRef.entityName.empty())
-		sceneRef.cam.updateFollow(entity.position, animStateRef.followDistance, animStateRef.followHeight);
+	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty())
+		sceneRef.cam.updateFollow(animateGO->position, animStateRef.followDistance, animStateRef.followHeight);
 
 	sceneRef.cam.updateMatrices(window_);
+	dialogSysRef.update(sceneRef, dt);
 }
 
 void Application::render_()
@@ -339,7 +440,7 @@ void Application::render_()
 	ImGuiManagerRef.newFrame();
 
 	if (showSceneManager_)
-		ImGuiManagerRef.drawSceneEntityManager(sceneRef);
+		ImGuiManagerRef.drawSceneGameObjectManager(sceneRef);
 
 	if (showAnimationUI_)
 		ImGuiManagerRef.drawAnimationControlPanel(sceneRef);
@@ -350,6 +451,7 @@ void Application::render_()
 	if (showSceneControlsWindow_)
 		ImGuiManagerRef.drawSceneControlWindow(sceneRef);
 
+	dialogSysRef.render(sceneRef);
 	// Render ImGui on top of the scene
 	ImGuiManagerRef.render();
 
