@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -9,6 +10,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
+
+#include "BoundingBox.hpp"
 
 class Model;
 
@@ -30,21 +33,6 @@ public:
 	GameObject& operator=(GameObject const&) = default;
 	GameObject(GameObject&&) = default;
 	GameObject& operator=(GameObject&&) = default;
-
-	// Public properties that don't need additional logic
-	std::string_view name;
-	std::string tag;
-	bool visible{true};
-	bool active{true};
-	int layer{0};
-
-	// Custom properties system
-	std::unordered_map<std::string, std::string> properties;
-
-	// Transform properties - public for direct access and efficiency
-	glm::vec3 position{0.0f};
-	glm::vec3 rotationDeg{0.0f}; // Rotation in degrees
-	glm::vec3 scale{1.0f};
 
 	// Model operations (needs validation)
 	void setModel(std::shared_ptr<Model> newModel);
@@ -78,11 +66,31 @@ public:
 	void printInfo() const;
 	std::string toString() const;
 
+public:
+	// Public properties that don't need additional logic
+	std::string_view name;
+	std::string tag;
+	bool visible{true};
+	bool active{true};
+	int layer{0};
+
+	// Transform properties - public for direct access and efficiency
+	glm::vec3 position{0.0f};
+	glm::vec3 rotationDeg{0.0f}; // Rotation in degrees
+	glm::vec3 scale{1.0f};
+
+	// For collision
+	BoundingBox worldBBox;
+	// collision event callback — override in derived class or assign externally 'other' is the object this collided with
+	std::function<void(std::shared_ptr<GameObject> other)> onCollisionEnter = [&](std::shared_ptr<GameObject> other) {
+		std::cout << "[GameObject]" << this->name << " hit " << other->name << "\n";
+	};
+
 private:
 	// Private members that need controlled access
 	std::shared_ptr<Model> model_{nullptr};
 	glm::mat4 transform_{1.0f};
 
 	// Internal helper methods
-	glm::mat4 calculateTransformMatrix() const;
+	glm::mat4 calculateTransformMatrix_() const;
 };

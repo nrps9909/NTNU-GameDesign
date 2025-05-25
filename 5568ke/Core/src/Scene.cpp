@@ -118,10 +118,11 @@ void Scene::setupCameraToViewScene(float padding)
 	worldBounds.min = glm::vec3(std::numeric_limits<float>::max());
 	worldBounds.max = glm::vec3(std::numeric_limits<float>::lowest());
 
-	for (GameObject const& gameObject : gameObjects) {
-		if (!gameObject.visible || !gameObject.getModel())
+	for (auto const& goPtr : gameObjects) {
+		if (!goPtr || !goPtr->visible || !goPtr->getModel())
 			continue;
 
+		GameObject& gameObject = *goPtr;
 		BoundingBox local = gameObject.getModel()->localSpaceBBox;
 
 		// 8 corner
@@ -156,14 +157,13 @@ void Scene::setupCameraToViewScene(float padding)
 
 void Scene::setupCameraToViewGameObject(std::string const& gameObjectName, float padding)
 {
-	auto gameObjectOpt = findGameObject(gameObjectName);
-	if (!gameObjectOpt || !gameObjectOpt->get().getModel()) {
+	auto goPtr = findGameObject(gameObjectName);
+	if (!goPtr || !goPtr->getModel()) {
 		setupCameraToViewScene();
 		return;
 	}
 
-	GameObject const& gameObject = gameObjectOpt->get();
-
+	GameObject& gameObject = *goPtr;
 	BoundingBox worldBounds;
 	worldBounds.min = glm::vec3(std::numeric_limits<float>::max());
 	worldBounds.max = glm::vec3(std::numeric_limits<float>::lowest());
@@ -198,31 +198,40 @@ void Scene::setupCameraToViewGameObject(std::string const& gameObjectName, float
 }
 
 // Implementation for finding gameObject by name
-std::optional<std::reference_wrapper<GameObject>> Scene::findGameObject(std::string const& name)
+std::shared_ptr<GameObject> Scene::findGameObject(std::string const& name) const
 {
-	auto it = std::ranges::find_if(gameObjects, [&](GameObject const& obj) { return obj.getModel() && obj.getModel()->modelName == name; });
-	if (it == gameObjects.end())
-		return std::nullopt;
+	auto it = std::ranges::find_if(gameObjects, [&](std::shared_ptr<GameObject> const& obj) {
+		// only match if model exists and names equal
+		return obj->getModel() && obj->getModel()->modelName == name;
+	});
 
-	return *it; // implicit conversion to std::reference_wrapper
+	if (it != gameObjects.end())
+		return *it; // shared_ptr<GameObject>
+
+	return nullptr; // not found
 }
 
 // Implementation for adding gameObject with tracking by name
-void Scene::addGameObject(std::shared_ptr<Model> model)
+std::shared_ptr<GameObject> Scene::addGameObject(std::shared_ptr<Model> model)
 {
 	if (!model)
-		return;
+		return nullptr;
 
-	GameObject gameObject(model);
-	gameObjects.push_back(std::move(gameObject));
+	// create a shared_ptr<GameObject> directly
+	auto gameObject = std::make_shared<GameObject>(model);
+
+	// register into the scene
+	gameObjects.push_back(gameObject);
+
+	// return it so caller can further configure (e.g. set position, callbacks...)
+	return gameObject;
 }
-
-void Scene::addGameObject(GameObject const& gameObject) { gameObjects.push_back(gameObject); }
 
 // Implementation for removing gameObject
 void Scene::removeGameObject(std::string const& name)
 {
-	gameObjects.erase(std::remove_if(gameObjects.begin(), gameObjects.end(), [&name](GameObject const& obj) { return obj.getModel()->modelName == name; }),
+	gameObjects.erase(std::remove_if(gameObjects.begin(), gameObjects.end(),
+																	 [&](auto const& goPtr) { return goPtr && goPtr->getModel() && goPtr->getModel()->modelName == name; }),
 										gameObjects.end());
 }
 
@@ -238,7 +247,7 @@ void Scene::addLight(glm::vec3 const& position, glm::vec3 const& color, float in
 
 size_t Scene::getVisibleGameObjectCount() const
 {
-	return std::count_if(gameObjects.begin(), gameObjects.end(), [](GameObject const& obj) { return obj.visible; });
+	return std::count_if(gameObjects.begin(), gameObjects.end(), [](auto const& goPtr) { return goPtr && goPtr->visible; });
 }
 
 // Scene cleanup

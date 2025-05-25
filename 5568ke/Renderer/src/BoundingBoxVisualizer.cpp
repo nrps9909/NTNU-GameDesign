@@ -76,22 +76,12 @@ void BoundingBoxVisualizer::draw(Scene const& scene)
 	std::vector<glm::vec3> verts;
 	verts.reserve(scene.gameObjects.size() * 24);
 
-	for (auto const& gameObject : scene.gameObjects) {
-		if (!gameObject.visible || !gameObject.getModel())
+	for (auto const& goPtr : scene.gameObjects) {
+		if (!goPtr->visible || !goPtr->getModel())
 			continue;
 
-		BoundingBox const& bb = gameObject.getModel()->localSpaceBBox;
-		glm::vec3 minW(std::numeric_limits<float>::max());
-		glm::vec3 maxW(-std::numeric_limits<float>::max());
-
-		// Transform the 8 corners to world space
-		for (int c = 0; c < 8; ++c) {
-			glm::vec3 p = {(c & 1 ? bb.max.x : bb.min.x), (c & 2 ? bb.max.y : bb.min.y), (c & 4 ? bb.max.z : bb.min.z)};
-			p = glm::vec3(gameObject.getTransform() * glm::vec4(p, 1.0f));
-			minW = glm::min(minW, p);
-			maxW = glm::max(maxW, p);
-		}
-		buildBoxLines(minW, maxW, verts);
+		auto const& bb = goPtr->worldBBox;
+		buildBoxLines(bb.min, bb.max, verts);
 	}
 
 	if (verts.empty())

@@ -66,17 +66,17 @@ std::shared_ptr<Model> ModelRegistry::loadModel(std::string const& path, std::st
 }
 
 // Add a model to a scene with a transform matrix
-void ModelRegistry::addModelToScene(Scene& scene, std::shared_ptr<Model> model)
+std::shared_ptr<GameObject> ModelRegistry::addModelToScene(Scene& scene, std::shared_ptr<Model> model)
 {
 	if (!model) {
 		std::cout << "[ModelRegistry ERROR] Invalid Model Pointer" << std::endl;
-		return;
+		return nullptr;
 	}
 
-	// Add to scene
-	scene.addGameObject(model);
-
 	std::cout << "[ModelRegistry] Added model '" << model->modelName << "' to scene" << std::endl;
+
+	// Add to scene
+	return scene.addGameObject(model);
 }
 
 // Remove a model from a scene

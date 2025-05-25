@@ -52,14 +52,13 @@ public:
 
 	// Core scene components
 	Camera cam;
-	std::vector<GameObject> gameObjects;
+	std::vector<std::shared_ptr<GameObject>> gameObjects;
 	std::vector<Light> lights;
 
 	// Helper methods for scene management
-	void addGameObject(std::shared_ptr<Model> model);
-	void addGameObject(GameObject const& gameObject);
+	std::shared_ptr<GameObject> addGameObject(std::shared_ptr<Model> model);
 	void removeGameObject(std::string const& name);
-	std::optional<std::reference_wrapper<GameObject>> findGameObject(std::string const& name);
+	std::shared_ptr<GameObject> findGameObject(std::string const& name) const;
 
 	void addLight(glm::vec3 const& position, glm::vec3 const& color = glm::vec3(1.0f), float intensity = 1.0f);
 

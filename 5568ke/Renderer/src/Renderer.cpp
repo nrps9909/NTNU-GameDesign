@@ -113,10 +113,11 @@ void Renderer::drawModels_(Scene const& scene)
 	}
 
 	// Draw all visible entities
-	for (auto const& gameObject : scene.gameObjects) {
-		if (!gameObject.visible || !gameObject.getModel())
+	for (auto const& goPtr : scene.gameObjects) {
+		if (!goPtr || !goPtr->visible || !goPtr->getModel())
 			continue;
 
+		GameObject& gameObject = *goPtr;
 		if (showWireFrame) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}

@@ -9,6 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "AnimationClip.hpp"
+#include "Collider.hpp"
+#include "CollisionSystem.hpp"
 #include "Model.hpp"
 
 Application::Application() {}
@@ -128,7 +130,11 @@ void Application::setupDefaultScene_()
 
 		if (model) {
 			// Add to scene
-			registry.addModelToScene(sceneRef, model);
+			auto goPtr = registry.addModelToScene(sceneRef, model);
+			if (goPtr) {
+				auto modelCol = std::make_shared<AABBCollider>(goPtr);
+				collisionSysRef.add(modelCol);
+			}
 
 			// Store game object name in animation state
 			animStateRef.gameObjectName = name;
@@ -152,9 +158,10 @@ void Application::processInput_(float dt)
 	bool charMode = animStateRef.characterMoveMode;
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
 		if (charMode) {
-			auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
-			if (gameObjectOpt) {
-				GameObject& gameObject = gameObjectOpt->get();
+			auto goPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
+			if (goPtr) {
+				GameObject& gameObject = *goPtr;
+
 				glm::vec3 forward = glm::normalize(glm::vec3(sceneRef.cam.front.x, 0.0f, sceneRef.cam.front.z));
 				glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
 
@@ -225,12 +232,11 @@ void Application::processInput_(float dt)
 	// Update animation if playing
 	if (animStateRef.isAnimating) {
 		// Update animation
-		auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
-		if (!gameObjectOpt)
+		auto gameObject = sceneRef.findGameObject(animStateRef.gameObjectName);
+		if (!gameObject)
 			return;
 
-		GameObject& gameObject = gameObjectOpt->get();
-		auto model = gameObject.getModel();
+		auto model = gameObject->getModel();
 		if (!model || model->animations.empty())
 			return;
 
@@ -264,18 +270,16 @@ void Application::tick_(float dt)
 	// Process input (keyboard, mouse)
 	processInput_(dt);
 
-	// Look up the target gameObject
-	auto gameObjectOpt = sceneRef.findGameObject(animStateRef.gameObjectName);
-	if (!gameObjectOpt)
+	// Look up the target animateGO
+	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName);
+	if (!animateGO)
 		return;
-
-	GameObject& gameObject = gameObjectOpt->get();
 
 	// Update animation state
 	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
-		auto model = gameObject.getModel();
+		auto model = animateGO->getModel();
 		if (!model || model->animations.empty()) {
-			// If the selected gameObject has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
+			// If the selected animateGO has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
 			animStateRef.stop();
 		}
 		else {
@@ -302,21 +306,26 @@ void Application::tick_(float dt)
 	// Simple gravity and jump physics
 	if (animStateRef.characterMoveMode) {
 		animStateRef.verticalVelocity -= animStateRef.gravity * dt;
-		gameObject.position.y += animStateRef.verticalVelocity * dt;
+		animateGO->position.y += animStateRef.verticalVelocity * dt;
 
 		// Ground collision at y = 0
-		if (gameObject.position.y <= 0.0f) {
-			gameObject.position.y = 0.0f;
+		if (animateGO->position.y <= 0.0f) {
+			animateGO->position.y = 0.0f;
 			animStateRef.verticalVelocity = 0.0f;
 			animStateRef.onGround = true;
 		}
 
-		gameObject.updateTransformMatrix();
+		animateGO->updateTransformMatrix();
 	}
+
+	for (auto& go : sceneRef.gameObjects)
+		go->updateTransformMatrix();
+
+	collisionSysRef.update();
 
 	// Update camera position and matrices
 	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty())
-		sceneRef.cam.updateFollow(gameObject.position, animStateRef.followDistance, animStateRef.followHeight);
+		sceneRef.cam.updateFollow(animateGO->position, animStateRef.followDistance, animStateRef.followHeight);
 
 	sceneRef.cam.updateMatrices(window_);
 }

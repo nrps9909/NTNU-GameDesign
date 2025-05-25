@@ -31,7 +31,7 @@ public:
 	std::shared_ptr<Model> loadModel(std::string const& path, std::string const& name = "");
 
 	// Add a model to a scene with a transform matrix
-	void addModelToScene(Scene& scene, std::shared_ptr<Model> model);
+	std::shared_ptr<GameObject> addModelToScene(Scene& scene, std::shared_ptr<Model> model);
 
 	// Remove a model from a scene
 	void removeModelFromScene(Scene& scene, std::string const& name);

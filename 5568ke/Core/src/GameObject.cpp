@@ -33,7 +33,30 @@ void GameObject::scaleBy(glm::vec3 const& scaleFactor) { scale *= scaleFactor; }
 void GameObject::scaleBy(float uniformScale) { scale *= uniformScale; }
 
 // Transform matrix operations
-void GameObject::updateTransformMatrix() { transform_ = calculateTransformMatrix(); }
+void GameObject::updateTransformMatrix()
+{
+	transform_ = calculateTransformMatrix_();
+
+	// model_->localSpaceBBox is an AABB in model space
+	if (model_) {
+		BoundingBox const& local = model_->localSpaceBBox;
+
+		// Transform the 8 corners to world space, then clamp to AABB
+		glm::vec3 worldMin(std::numeric_limits<float>::max());
+		glm::vec3 worldMax(std::numeric_limits<float>::lowest());
+
+		for (int i = 0; i < 8; ++i) {
+			glm::vec3 corner((i & 1) ? local.max.x : local.min.x, (i & 2) ? local.max.y : local.min.y, (i & 4) ? local.max.z : local.min.z);
+
+			glm::vec3 worldCorner = glm::vec3(transform_ * glm::vec4(corner, 1.0f));
+
+			worldMin = glm::min(worldMin, worldCorner);
+			worldMax = glm::max(worldMax, worldCorner);
+		}
+		worldBBox.min = worldMin;
+		worldBBox.max = worldMax;
+	}
+}
 
 void GameObject::setTransform(glm::mat4 const& newTransform)
 {
@@ -51,7 +74,7 @@ void GameObject::setTransform(glm::mat4 const& newTransform)
 	}
 }
 
-glm::mat4 GameObject::calculateTransformMatrix() const
+glm::mat4 GameObject::calculateTransformMatrix_() const
 {
 	glm::mat4 t = glm::mat4(1.0f);
 
@@ -140,13 +163,6 @@ void GameObject::printInfo() const
 	std::cout << "  Rotation: " << glm::to_string(rotationDeg) << std::endl;
 	std::cout << "  Scale: " << glm::to_string(scale) << std::endl;
 	std::cout << "  Has Model: " << (model_ ? "Yes" : "No") << std::endl;
-
-	if (!properties.empty()) {
-		std::cout << "  Properties:" << std::endl;
-		for (auto const& [key, value] : properties) {
-			std::cout << "    " << key << ": " << value << std::endl;
-		}
-	}
 }
 
 std::string GameObject::toString() const

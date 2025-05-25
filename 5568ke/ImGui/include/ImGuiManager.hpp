@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "CollisionSystem.hpp"
 #include "GlobalAnimationState.hpp"
 #include "ModelRegistry.hpp"
 #include "Renderer.hpp"
@@ -39,6 +40,7 @@ public:
 	ModelRegistry& registryRef = ModelRegistry::getInstance();
 	Renderer& rendererRef = Renderer::getInstance();
 	GlobalAnimationState& animStateRef = GlobalAnimationState::getInstance();
+	CollisionSystem& collisionSysRef = CollisionSystem::getInstance();
 
 private:
 	ImGuiManager() = default;
