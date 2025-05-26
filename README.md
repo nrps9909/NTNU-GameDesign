@@ -1,11 +1,3 @@
-# 5568ke
+# NTNU-GameDesign
 
-> 趙昱平好強
-
-- [ ] draw bounding box
-- [ ] Fix Camera distance
-- [ ] load model unit
-- [ ] sky box
-- [ ] ground
-- [ ] collision
-- [ ] Manually transform for the node
+原專案(引擎)為 [5568ke](https://github.com/Mes0903/5568ke)，此專案改自該專案
