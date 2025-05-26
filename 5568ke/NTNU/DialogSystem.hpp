@@ -63,6 +63,9 @@ public:
 	void render(Scene const& scene);
 	void processInput(GLFWwindow* window);
 
+    // MOVED or ensured to be public
+    int findIdleAnimationIndex(std::shared_ptr<GameObject> const& go);
+
 private:
 	DialogSystem() = default;
 
@@ -78,7 +81,7 @@ private:
 	void initializeNPCIdleAnimation(NPC& npc);
 	void updateNPCIdleAnimation(NPC& npc, float dt);
 	void startIdleAnimation(NPC& npc);
-	int findIdleAnimationIndex(std::shared_ptr<GameObject> const& go);
+	// int findIdleAnimationIndex(std::shared_ptr<GameObject> const& go); // Removed from private if it was here
 
 	std::vector<NPC> npcs_;
 };

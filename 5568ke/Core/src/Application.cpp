@@ -39,8 +39,7 @@ void Application::initWindow_()
 	glfwMakeContextCurrent(window_);
 	glfwSwapInterval(1);
 
-	// Set input mode and callbacks
-	glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // Changed to CURSOR_NORMAL for UI interaction
+	glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	glfwSetWindowUserPointer(window_, this);
 
 	glfwSetKeyCallback(window_, keyCallback_);
@@ -54,9 +53,6 @@ void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int ac
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 
-	// if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-	// 	glfwSetWindowShouldClose(window, GL_TRUE);
-
 	if (key >= 0 && key < 1024) {
 		if (action == GLFW_PRESS)
 			app->keys_[key] = true;
@@ -64,14 +60,11 @@ void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int ac
 			app->keys_[key] = false;
 	}
 
-	// Toggle cursor mode for camera control
 	if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
 		int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
 		if (cursorMode == GLFW_CURSOR_NORMAL) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-			// reset first-mouse flag so next movement starts clean
-			Camera& cam = static_cast<Application*>(glfwGetWindowUserPointer(window))->sceneRef.cam;
+			Camera& cam = app->sceneRef.cam;
 			cam.firstMouse = true;
 		}
 		else {
@@ -87,8 +80,6 @@ void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int ac
 void Application::mouseCallback_(GLFWwindow* window, double xpos, double ypos)
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-
-	// Only process mouse movement for camera if cursor is disabled
 	int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
 		app->sceneRef.cam.processMouse(xpos, ypos);
@@ -97,421 +88,298 @@ void Application::mouseCallback_(GLFWwindow* window, double xpos, double ypos)
 
 void Application::scrollCallback_(GLFWwindow* window, double xoffset, double yoffset)
 {
-	// TODO: Handle zoom or other scroll behaviors if needed.
-	//       For example, adjust camera FOV or distance
+	// Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	// app->sceneRef.cam.processMouseScroll(static_cast<float>(yoffset)); // Example
 }
 
 void Application::initGL_()
 {
-	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-
-	// Print some OpenGL information
-	// std::cout << "[Application] OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-	// std::cout << "[Application] GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-	// std::cout << "[Application] Vendor: " << glGetString(GL_VENDOR) << std::endl;
-	// std::cout << "[Application] Renderer: " << glGetString(GL_RENDERER) << std::endl;
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        // Consider exiting or throwing an exception
+    }
 }
 
 void Application::setupDefaultScene_()
 {
-	// Set up a default light (args: position, color, intensity)
 	sceneRef.addLight(glm::vec3(1.0f, 7.0f, -4.0f), glm::vec3(1.0f), 2.0f);
 
 	try {
-		// Initialize renderer
 		rendererRef.init();
-
-		std::shared_ptr<GameObject> teacherGO = nullptr; // 保存老師角色
+		std::shared_ptr<GameObject> teacherGO = nullptr;
 
 		{
-			// Load Ina - This will be our Player
 			std::string const inaPath = "assets/models/smo_ina/scene.gltf";
-			std::string const playerName = "Player"; // MODIFIED: Change name to "Player" for DialogSystem
-			std::shared_ptr<Model> playerModel = registryRef.loadModel(inaPath, playerName); // MODIFIED: Use playerName
-
+			std::string const playerName = "Player";
+			std::shared_ptr<Model> playerModel = registryRef.loadModel(inaPath, playerName);
 			if (playerModel) {
-				// When playerModel is used to create a GameObject,
-				// the GameObject's name will be initialized from playerModel->modelName,
-				// which should now be "Player".
 				auto goPtr = registryRef.addModelToScene(sceneRef, playerModel);
 				if (goPtr) {
-					// goPtr->name should now be "Player" due to GameObject constructor
 					goPtr->position = {5.2f, 0.12f, -1.0f};
 					goPtr->rotationDeg.y = 50;
+					goPtr->updateTransformMatrix(); // IMPORTANT: Update transform after setting properties
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-
 					animStateRef.characterMoveMode = true;
 				}
-
-				// Store game object name in animation state
-				// This ensures that movement controls and camera follow the "Player" GameObject
-				animStateRef.gameObjectName = playerName; // MODIFIED: Use playerName ("Player")
-
-				// Set up camera to view the "Player" GameObject
-				sceneRef.setupCameraToViewGameObject(playerName); // MODIFIED: Use playerName ("Player")
+				animStateRef.gameObjectName = playerName;
+				sceneRef.setupCameraToViewGameObject(playerName);
 			}
 		}
 
 		{
-			// Load ame - 當作老師角色
 			std::string const amePath = "assets/models/smo_ame/scene.gltf";
 			std::string const ameName = "ame";
 			std::shared_ptr<Model> ameModel = registryRef.loadModel(amePath, ameName);
-
 			if (ameModel) {
 				auto goPtr = registryRef.addModelToScene(sceneRef, ameModel);
 				if (goPtr) {
 					goPtr->position = {8.5f, 0.38f, 0.18f};
 					goPtr->rotationDeg.y = -90;
+					goPtr->updateTransformMatrix(); // IMPORTANT
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-
-					// 設置為老師角色，包含開場劇情
 					teacherGO = goPtr;
-
-					// Note: animStateRef.characterMoveMode is already set to true by player
 				}
 			}
 		}
 
 		{
-			// Load calli - 角色A (周理安)
 			std::string const calliPath = "assets/models/smo_calli/scene.gltf";
 			std::string const calliName = "calli";
 			std::shared_ptr<Model> calliModel = registryRef.loadModel(calliPath, calliName);
-
 			if (calliModel) {
 				auto goPtr = registryRef.addModelToScene(sceneRef, calliModel);
 				if (goPtr) {
 					goPtr->position = {6.369f, 0.12f, 2.834f};
 					goPtr->scale = glm::vec3(0.35f);
 					goPtr->rotationDeg.y = -161;
+					goPtr->updateTransformMatrix(); // IMPORTANT
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-
-					// 初始化角色A的劇情
 					initA(goPtr);
 				}
 			}
 		}
 
 		{
-			// Load kiara - 角色B (林夢瑤)
 			std::string const kiaraPath = "assets/models/smo_kiara/scene.gltf";
 			std::string const kiaraName = "kiara";
 			std::shared_ptr<Model> kiaraModel = registryRef.loadModel(kiaraPath, kiaraName);
-
 			if (kiaraModel) {
 				auto goPtr = registryRef.addModelToScene(sceneRef, kiaraModel);
 				if (goPtr) {
 					goPtr->position = {7.38f, 0.12f, -1.538f};
 					goPtr->rotationDeg.y = -42;
+					goPtr->updateTransformMatrix(); // IMPORTANT
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-
-					// 初始化角色B的劇情
 					initB(goPtr);
 				}
 			}
 		}
 
 		{
-			// Load gura - 角色C (沈奕恆)
 			std::string const guraPath = "assets/models/smo_gura/scene.gltf";
 			std::string const guraName = "gura";
 			std::shared_ptr<Model> guraModel = registryRef.loadModel(guraPath, guraName);
-
 			if (guraModel) {
 				auto goPtr = registryRef.addModelToScene(sceneRef, guraModel);
 				if (goPtr) {
 					goPtr->position = {7.744f, 0.12f, 2.284f};
 					goPtr->scale = glm::vec3(0.35f);
 					goPtr->rotationDeg.y = -141.503f;
+					goPtr->updateTransformMatrix(); // IMPORTANT
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-
-                    // 初始化角色C的劇情
 					initC(goPtr);
 				}
 			}
 		}
 
 		{
-			// Load ClassRoom
 			std::string const classRoomPath = "assets/models/japanese_classroom/scene.gltf";
 			std::string const classRoomName = "classroom";
 			std::shared_ptr<Model> classRoomModel = registryRef.loadModel(classRoomPath, classRoomName);
-
 			if (classRoomModel) {
 				auto goPtr = registryRef.addModelToScene(sceneRef, classRoomModel);
 				if (goPtr) {
-					goPtr->position = {8.4f, 0.0f, 6.9f};
+					goPtr->position = {8.4f, 0.0f, 7.0f};
 					goPtr->scale = glm::vec3(2.6f);
+					goPtr->updateTransformMatrix(); // IMPORTANT
 				}
 			}
 		}
 
-		// 最後初始化老師的開場劇情（包含哥布林測驗）
 		if (teacherGO) {
 			initBegin(teacherGO);
 			std::cout << "[Application] Dialog system initialized with teacher and character routes" << std::endl;
 		}
 
 	} catch (std::runtime_error const& error) {
-		std::cout << error.what() << std::endl;
+		std::cerr << "[Application::setupDefaultScene_] Exception: " << error.what() << std::endl;
 	}
 }
 
 void Application::processInput_(float dt)
 {
-	// Only process keyboard input for camera if cursor is disabled
 	int cursorMode = glfwGetInputMode(window_, GLFW_CURSOR);
 	bool charMode = animStateRef.characterMoveMode;
+
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
-		if (charMode) {
-			// animStateRef.gameObjectName should be "Player" now
-			auto goPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
-			if (goPtr) {
-				GameObject& gameObject = *goPtr;
+		if (charMode && !animStateRef.gameObjectName.empty()) {
+			auto goSharedPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
+			if (goSharedPtr) {
+				GameObject& gameObject = *goSharedPtr;
+				glm::vec3 worldForward = glm::normalize(glm::vec3(sceneRef.cam.front.x, 0.0f, sceneRef.cam.front.z));
+				glm::vec3 worldRight = glm::normalize(glm::cross(worldForward, glm::vec3(0.0f, 1.0f, 0.0f)));
+				glm::vec3 moveDirection(0.0f);
+				float currentSpeed = animStateRef.camSpeed; // Assuming camSpeed is player speed
 
-				glm::vec3 forward = glm::normalize(glm::vec3(sceneRef.cam.front.x, 0.0f, sceneRef.cam.front.z));
-				glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+				if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) moveDirection += worldForward;
+				if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) moveDirection -= worldForward;
+				if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) moveDirection -= worldRight;
+				if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) moveDirection += worldRight;
 
-				glm::vec3 move(0.0f);
-				float speed = animStateRef.camSpeed;
-				if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-					move += forward;
-				if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-					move -= forward;
-				if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-					move -= right;
-				if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-					move += right;
-
-				// Jump input
-				// if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
-				// 	gameObject.velocity.y = gameObject.jumpSpeed; // launch upward
-				// }
-
-				auto resetClipToFirstFrame = [&](GameObject& gameObject) {
-					if (!gameObject.getModel() || gameObject.getModel()->animations.empty())
-						return;
-
-					int clip = animStateRef.clipIndex;
-					if (static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size())
-						clip = 0;
-                    
-                    if (clip < 0 || static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size() || !gameObject.getModel()->animations[clip]) {
-                        // std::cerr << "[Application::processInput_] Warning: Invalid clip index or null animation clip for " << std::string(gameObject.name) << ". Clip index: " << clip << std::endl;
-                        return;
-                    }
-
-					gameObject.getModel()->animations[clip]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
-					gameObject.getModel()->updateLocalMatrices();
-				};
-
-				bool isMoving = glm::length(move) > 0.0f;
-				bool startedMoving = isMoving && !animStateRef.wasMoving;
-				bool stoppedMoving = !isMoving && animStateRef.wasMoving;
+				bool isMoving = glm::length(moveDirection) > 0.01f; // Use a small threshold
 
 				if (isMoving) {
-					// Update position and direction
-					move = glm::normalize(move) * speed * dt;
-					gameObject.position += move;
-
-					glm::vec2 dir2D(move.x, move.z);
-					if (glm::length(dir2D) > 0.0f)
-						gameObject.rotationDeg.y = glm::degrees(atan2(move.x, move.z));
-
+					moveDirection = glm::normalize(moveDirection) * currentSpeed * dt;
+					gameObject.position += moveDirection;
+					if (glm::length(glm::vec2(moveDirection.x, moveDirection.z)) > 0.01f) {
+						gameObject.rotationDeg.y = glm::degrees(atan2(moveDirection.x, moveDirection.z));
+					}
 					gameObject.updateTransformMatrix();
 				}
 
-				// Changed the statue of animation
-				if (startedMoving) {
-                    if (gameObject.getModel() && !gameObject.getModel()->animations.empty()) {
-					    animStateRef.play(std::min<int>(animStateRef.clipIndex, gameObject.getModel()->animations.size() - 1), 0.0f);
-					    resetClipToFirstFrame(gameObject); // Start from frame 0
+				// Animation state handling
+				if (gameObject.hasModel() && !gameObject.getModel()->animations.empty()) {
+                    int idleAnimIndex = dialogSysRef.findIdleAnimationIndex(goSharedPtr); // Or a predefined idle index
+                    int walkAnimIndex = 1; // Assuming 1 is a walk/move animation, adjust as needed
+                    if (static_cast<size_t>(walkAnimIndex) >= gameObject.getModel()->animations.size() || !gameObject.getModel()->animations[walkAnimIndex]) {
+                        walkAnimIndex = 0; // Fallback to a safe animation
                     }
-				}
-				else if (stoppedMoving) {
-					animStateRef.stop();
-					resetClipToFirstFrame(gameObject); // Reset to frame 0
-				}
+                     if (idleAnimIndex == -1 || static_cast<size_t>(idleAnimIndex) >= gameObject.getModel()->animations.size() || !gameObject.getModel()->animations[idleAnimIndex]) {
+                        idleAnimIndex = 0; // Fallback
+                    }
 
+
+					if (isMoving && !animStateRef.wasMoving) { // Started moving
+						animStateRef.clipIndex = walkAnimIndex;
+						animStateRef.play(animStateRef.clipIndex, 0.0f);
+					} else if (!isMoving && animStateRef.wasMoving) { // Stopped moving
+						animStateRef.stop();
+                        animStateRef.clipIndex = idleAnimIndex; // Switch to idle animation clip
+                        // Reset idle animation to its start if you want it to always restart
+                        // This might conflict with DialogSystem's idle animation handling if not careful
+                        if(gameObject.getModel()->animations[animStateRef.clipIndex]) {
+						    gameObject.getModel()->animations[animStateRef.clipIndex]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
+						    gameObject.getModel()->updateLocalMatrices();
+                        }
+					}
+				}
 				animStateRef.wasMoving = isMoving;
 			}
-		}
-		else {
-			// Camera free movement
+		} else { // Camera free movement
 			sceneRef.cam.processKeyboard(dt, window_);
 		}
 	}
 
-	// Update animation if playing
-	if (animStateRef.isAnimating) {
-		// Update animation
-		auto gameObject = sceneRef.findGameObject(animStateRef.gameObjectName);
-		if (!gameObject)
-			return;
+	// Update player animation if moving and animation is playing
+	if (animStateRef.isAnimating && animStateRef.wasMoving && charMode && !animStateRef.gameObjectName.empty()) {
+		auto goSharedPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
+		if (goSharedPtr && goSharedPtr->hasModel() && !goSharedPtr->getModel()->animations.empty()) {
+			GameObject& gameObject = *goSharedPtr;
+			int currentClipIdx = animStateRef.clipIndex;
 
-		auto model = gameObject->getModel();
-		if (!model || model->animations.empty())
-			return;
-
-		// Ensure valid clip index
-		if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
-			animStateRef.clipIndex = 0;
-        
-        if (animStateRef.clipIndex < 0 || static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size() || !model->animations[animStateRef.clipIndex]) {
-            // std::cerr << "[Application::processInput_] Warning: Animating with invalid clip index or null animation clip for " << std::string(gameObject->name) << ". Clip index: " << animStateRef.clipIndex << std::endl;
-            animStateRef.stop();
-            return;
-        }
-
-
-		// Get clip
-		auto& clip = model->animations[animStateRef.clipIndex];
-
-		// Advance time
-		animStateRef.currentTime += dt * animStateRef.getAnimateSpeed();
-
-		// Loop if needed
-		float duration = clip->getDuration();
-		if (duration > 0.0f && animStateRef.currentTime > duration) {
-			animStateRef.currentTime = std::fmod(animStateRef.currentTime, duration);
-		} else if (duration <= 0.0f) {
-            animStateRef.currentTime = 0.0f; // Prevent issues with zero/negative duration
-        }
-
-
-		// Update animation frame
-		// std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", gameObject=" << animStateRef.gameObjectName
-		// << ", clip=" << animStateRef.clipIndex << std::endl;
-
-		clip->setAnimationFrame(model->nodes, animStateRef.currentTime);
-		model->updateLocalMatrices();
+			if (currentClipIdx >= 0 && static_cast<size_t>(currentClipIdx) < gameObject.getModel()->animations.size() && gameObject.getModel()->animations[currentClipIdx]) {
+				auto& animClip = gameObject.getModel()->animations[currentClipIdx];
+				animStateRef.currentTime += dt * animStateRef.getAnimateSpeed();
+				float duration = animClip->getDuration();
+				if (duration > 0.0f) {
+					animStateRef.currentTime = std::fmod(animStateRef.currentTime, duration);
+				} else {
+					animStateRef.currentTime = 0.0f;
+				}
+				animClip->setAnimationFrame(gameObject.getModel()->nodes, animStateRef.currentTime);
+				gameObject.getModel()->updateLocalMatrices(); // Ensure model matrices are updated after animation
+			} else {
+                 // std::cerr << "Player animation: Invalid clip index " << currentClipIdx << std::endl;
+                 animStateRef.stop();
+            }
+		}
 	}
 }
 
+
 void Application::tick_(float dt)
 {
-	// Process input (keyboard, mouse)
-	processInput_(dt);
+	processInput_(dt); // Handles player movement, animation state, and camera free-move
 
-	// 更新對話系統 - 添加這兩行
-	dialogSysRef.update(sceneRef, dt);
-	dialogSysRef.processInput(window_);
+	dialogSysRef.update(sceneRef, dt); // Handles NPC logic, idle animations, interaction checks
+	dialogSysRef.processInput(window_); // Handles player input for dialog progression
 
-	// Look up the target animateGO (Player)
-	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName); 
-	// No early return if not found, other game objects might still need updates.
+	// Other game logic updates can go here
+	// For example, physics updates for all dynamic objects, AI updates not handled by DialogSystem etc.
 
-	for (auto& goPtr : sceneRef.gameObjects) {
-		if (!goPtr) continue;
-		auto& go = *goPtr;
-		if (!go.active)
-			continue;
+	collisionSysRef.update(); // Handles collision detection and resolution
 
-		// Apply gravity and integrate velocity (currently commented out)
-		// go.velocity.y -= 9.8f * dt; 
-		// go.position += go.velocity * dt;
-		// go.updateTransformMatrix();
-
-		// if (go.worldBBox.min.y <= 0.0f) {
-		// 	go.position.y = 0.0f;
-		// 	go.velocity.y = 0.0f;
-		// 	go.updateTransformMatrix();
-		// }
+	// Update camera follow if in character mode
+	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty()) {
+		auto playerGO = sceneRef.findGameObject(animStateRef.gameObjectName);
+		if (playerGO) {
+			sceneRef.cam.updateFollow(playerGO->position, animStateRef.followDistance, animStateRef.followHeight);
+		}
 	}
-
-	// Update animation state (This is now handled in processInput_ for better logic separation)
-	// The code block for animation update was moved to processInput_ to ensure it's tied to input state (moving/stopped)
-	// and whether the game is in character move mode.
-
-	collisionSysRef.update();
-
-	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty() && animateGO) {
-		sceneRef.cam.updateFollow(animateGO->position, animStateRef.followDistance, animStateRef.followHeight);
-    }
-
-	sceneRef.cam.updateMatrices(window_);
+	sceneRef.cam.updateMatrices(window_); // Update view/projection matrices
 }
 
 void Application::render_()
 {
 	int w, h;
 	glfwGetFramebufferSize(window_, &w, &h);
+	if (w == 0 || h == 0) return; // Avoid division by zero if window is minimized
 
-	// Begin the frame
 	rendererRef.beginFrame(w, h, {0.1f, 0.11f, 0.13f});
-
-	// Draw 3D scene
 	rendererRef.drawScene(sceneRef);
-
-	// End frame (cleanup rendering state)
 	rendererRef.endFrame();
 
-	// Update ImGui windows
 	ImGuiManagerRef.newFrame();
-
-	// if (showSceneManager_)
-	// ImGuiManagerRef.drawSceneGameObjectManager(sceneRef);
-
-	// if (showAnimationUI_)
-	// ImGuiManagerRef.drawAnimationControlPanel(sceneRef);
-
-	// if (showStatsWindow_)
-	// ImGuiManagerRef.drawStatusWindow(sceneRef);
-
-	// if (showSceneControlsWindow_)
-	// ImGuiManagerRef.drawSceneControlWindow(sceneRef);
-
-	// 渲染對話系統
-	dialogSysRef.render(sceneRef);
-
-	// Render ImGui on top of the scene
+	// ImGuiManagerRef.drawSceneGameObjectManager(sceneRef); // Optional UI
+	// ImGuiManagerRef.drawAnimationControlPanel(sceneRef); // Optional UI
+	// ImGuiManagerRef.drawStatusWindow(sceneRef); // Optional UI
+	// ImGuiManagerRef.drawSceneControlWindow(sceneRef); // Optional UI
+	dialogSysRef.render(sceneRef); // Dialog UI
 	ImGuiManagerRef.render();
 
-	// Swap buffers
 	glfwSwapBuffers(window_);
 }
 
-// Modified loop_ method to use tick_ and render_
 void Application::loop_()
 {
 	prevTime_ = glfwGetTime();
-
 	while (!glfwWindowShouldClose(window_)) {
-		// Calculate delta time
 		double now = glfwGetTime();
 		float dt = static_cast<float>(now - prevTime_);
 		prevTime_ = now;
 
-        if (dt < 0.0f) dt = 0.0f; // Guard against negative delta time if system clock changes
-        if (dt > 0.1f) dt = 0.1f; // Cap delta time to prevent large jumps
+		if (dt <= 0.0f) dt = 0.00001f; // Ensure dt is positive and non-zero
+		if (dt > 0.1f) dt = 0.1f;     // Clamp dt to prevent instability from large frame drops
 
-		tick_(dt);
-		render_();
-		glfwPollEvents();
+		glfwPollEvents(); // Poll events first
+		tick_(dt);        // Update game state
+		render_();        // Render the scene and UI
 	}
 }
 
 void Application::cleanup_()
 {
-	// Clean up ImGui
 	ImGuiManagerRef.cleanup();
-
-	// Clean up scene resources
 	sceneRef.cleanup();
-
-	// Clean up renderer (add this)
 	rendererRef.cleanup();
-
-	// Clean up GLFW
-    if (window_) {
-	    glfwDestroyWindow(window_);
-        window_ = nullptr;
-    }
+	if (window_) {
+		glfwDestroyWindow(window_);
+		window_ = nullptr;
+	}
 	glfwTerminate();
 }
