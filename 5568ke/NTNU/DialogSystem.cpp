@@ -7,7 +7,9 @@
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "AnimationClip.hpp"
 #include "GameObject.hpp"
+#include "Model.hpp"
 #include "Scene.hpp"
 
 DialogSystem& DialogSystem::getInstance()
@@ -32,6 +34,101 @@ glm::vec2 DialogSystem::worldToScreen(glm::vec3 const& pos, Scene const& scene, 
 	return glm::vec2(screenX, screenY);
 }
 
+void DialogSystem::initializeNPCIdleAnimation(NPC& npc)
+{
+	if (!npc.go || !npc.go->getModel()) {
+		return;
+	}
+
+	// 尋找idle動畫
+	npc.idleAnimationIndex = findIdleAnimationIndex(npc.go);
+
+	if (npc.idleAnimationIndex != -1) {
+		// 開始播放idle動畫
+		startIdleAnimation(npc);
+		std::cout << "[DialogSystem] Initialized idle animation for NPC at index " << npc.idleAnimationIndex << std::endl;
+	}
+	else {
+		std::cout << "[DialogSystem] No idle animation found for NPC" << std::endl;
+	}
+}
+
+int DialogSystem::findIdleAnimationIndex(std::shared_ptr<GameObject> const& go)
+{
+	if (!go || !go->getModel()) {
+		return -1;
+	}
+
+	auto const& animations = go->getModel()->animations;
+
+	// 嘗試尋找包含"idle"關鍵字的動畫（不區分大小寫）
+	for (size_t i = 0; i < animations.size(); ++i) {
+		std::string clipName = animations[i]->clipName;
+		std::transform(clipName.begin(), clipName.end(), clipName.begin(), ::tolower);
+
+		if (clipName.find("idle") != std::string::npos) {
+			return static_cast<int>(i);
+		}
+	}
+
+	// 如果沒找到idle動畫，嘗試使用第一個動畫作為默認
+	if (!animations.empty()) {
+		std::cout << "[DialogSystem] No idle animation found, using first animation as default" << std::endl;
+		return 0;
+	}
+
+	return -1;
+}
+
+void DialogSystem::startIdleAnimation(NPC& npc)
+{
+	if (npc.idleAnimationIndex == -1 || !npc.go || !npc.go->getModel()) {
+		return;
+	}
+
+	auto const& animations = npc.go->getModel()->animations;
+	if (static_cast<size_t>(npc.idleAnimationIndex) >= animations.size()) {
+		return;
+	}
+
+	npc.isPlayingIdleAnimation = true;
+	npc.idleAnimationTime = 0.0f;
+
+	// 設置初始幀
+	animations[npc.idleAnimationIndex]->setAnimationFrame(npc.go->getModel()->nodes, 0.0f);
+	npc.go->getModel()->updateLocalMatrices();
+}
+
+void DialogSystem::updateNPCIdleAnimation(NPC& npc, float dt)
+{
+	// 如果沒有在對話中且沒有播放idle動畫，開始播放
+	if (!npc.isPlayingIdleAnimation && npc.idleAnimationIndex != -1) {
+		startIdleAnimation(npc);
+		return;
+	}
+
+	// 更新idle動畫
+	if (npc.isPlayingIdleAnimation && npc.idleAnimationIndex != -1 && npc.go && npc.go->getModel()) {
+		auto const& animations = npc.go->getModel()->animations;
+		if (static_cast<size_t>(npc.idleAnimationIndex) < animations.size()) {
+			auto const& idleClip = animations[npc.idleAnimationIndex];
+
+			// 更新動畫時間
+			npc.idleAnimationTime += dt;
+
+			// 循環播放
+			float duration = idleClip->getDuration();
+			if (duration > 0.0f && npc.idleAnimationTime > duration) {
+				npc.idleAnimationTime = std::fmod(npc.idleAnimationTime, duration);
+			}
+
+			// 應用動畫幀
+			idleClip->setAnimationFrame(npc.go->getModel()->nodes, npc.idleAnimationTime);
+			npc.go->getModel()->updateLocalMatrices();
+		}
+	}
+}
+
 void DialogSystem::update(Scene& scene, float dt)
 {
 	std::shared_ptr<GameObject> player = nullptr;
@@ -48,15 +145,18 @@ void DialogSystem::update(Scene& scene, float dt)
 			continue;
 		}
 
+		// 更新NPC的idle動畫
+		updateNPCIdleAnimation(npc, dt);
+
 		if (npc.inDialog) {
 			npc.showIcon = false;
 			continue;
 		}
 
 		float distance = player->distanceTo(*npc.go);
-		float const INTERACTION_RANGE = 3.0f;
+		float const INTERACTION_RANGE = 0.8f;
 
-		if (distance <= INTERACTION_RANGE) {
+		if (npc.routeEnabled && distance <= INTERACTION_RANGE) {
 			npc.showIcon = true;
 		}
 		else {
@@ -75,7 +175,7 @@ void DialogSystem::render(Scene const& scene)
 	for (auto const& npc : npcs_) {
 		if (npc.showIcon && npc.go) {
 			glm::vec3 npcPos = npc.go->getWorldPosition();
-			glm::vec3 iconPos = npcPos + glm::vec3(0.0f, 2.0f, 0.0f);
+			glm::vec3 iconPos = npcPos + glm::vec3(0.0f, 1.5f, 0.0f);
 
 			glm::vec2 screenPos = worldToScreen(iconPos, scene, viewportW, viewportH);
 
@@ -123,10 +223,12 @@ void DialogSystem::renderDialogUI()
 		activeNPC->scriptIndex = 0;
 		activeNPC->lineIndex = 0;
 		dialogChoice = DialogChoice::non;
+		// 對話結束時，重新開始idle動畫
+		startIdleAnimation(*activeNPC);
 		return;
 	}
 
-	DialogBase* currentDialog = activeNPC->dialogs[activeNPC->scriptIndex];
+	DialogBase* currentDialog = activeNPC->dialogs[activeNPC->scriptIndex].get();
 
 	if (currentDialog->type == DialogType::DIALOG) {
 		renderDialog(*static_cast<Dialog*>(currentDialog), *activeNPC);
@@ -162,45 +264,68 @@ bool isNarrativeLine(std::string const& line)
 
 void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 {
-	ImGui::SetNextWindowSize(ImVec2(800, 200), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.8f), ImGuiCond_Always, ImVec2(0.5f, 1.0f));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
 
 	if (ImGui::Begin("##Dialog", nullptr, flags)) {
-		if (npc.lineIndex < dialog.lines.size()) {
-			std::string currentLine = dialog.lines[npc.lineIndex];
+		// 創建滾動區域來顯示對話內容
+		ImGui::BeginChild("DialogContent", ImVec2(0, -60), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		// 顯示從第一行到當前行的所有對話
+		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
+			std::string const& line = dialog.lines[i];
 
 			// 檢查是否是旁白
-			if (isNarrativeLine(currentLine)) {
+			if (isNarrativeLine(line)) {
 				// 旁白樣式 - 深色背景，灰色文字
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.85f, 0.85f, 0.85f, 1.0f));
-				ImGui::TextWrapped("%s", currentLine.c_str());
+				ImGui::TextWrapped("%s", line.c_str());
 				ImGui::PopStyleColor();
 			}
 			else {
 				// 角色對話 - 分離說話者和內容
-				size_t colonPos = currentLine.find("：");
+				size_t colonPos = line.find("：");
 				if (colonPos == std::string::npos) {
-					colonPos = currentLine.find(":");
+					colonPos = line.find(":");
 				}
 
 				if (colonPos != std::string::npos) {
-					std::string speaker = currentLine.substr(0, colonPos);
-					std::string content = currentLine.substr(colonPos + (currentLine[colonPos] == ':' ? 1 : 3));
+					std::string speaker = line.substr(0, colonPos);
+					std::string content = line.substr(colonPos + (line[colonPos] == ':' ? 1 : 3));
 
 					ImGui::TextColored(ImVec4(0.8f, 0.8f, 1.0f, 1.0f), "%s:", speaker.c_str());
 					ImGui::SameLine();
 					ImGui::TextWrapped("%s", content.c_str());
 				}
 				else {
-					ImGui::TextWrapped("%s", currentLine.c_str());
+					ImGui::TextWrapped("%s", line.c_str());
 				}
+			}
+
+			// 如果這是當前最新顯示的行，添加一些間距
+			if (i == npc.lineIndex) {
+				ImGui::Spacing();
+				// 自動滾動到最新的對話
+				ImGui::SetScrollHereY(1.0f);
+			}
+			else {
+				ImGui::Spacing();
 			}
 		}
 
+		ImGui::EndChild();
+
 		ImGui::Separator();
-		ImGui::Text("Press E to continue...");
+
+		// 顯示進度和提示
+		if (npc.lineIndex < dialog.lines.size() - 1) {
+			ImGui::Text("Press E to continue...");
+		}
+		else {
+			ImGui::Text("Press E to finish...");
+		}
 		ImGui::Text("(%zu/%zu)", npc.lineIndex + 1, dialog.lines.size());
 	}
 	ImGui::End();
@@ -278,6 +403,8 @@ void DialogSystem::renderEnding(Dialog const& ending, NPC& npc, bool isGoodEndin
 			npc.inDialog = false;
 			npc.scriptIndex = 0;
 			npc.lineIndex = 0;
+			// 對話結束時，重新開始idle動畫
+			startIdleAnimation(npc);
 		}
 	}
 	ImGui::End();
@@ -324,7 +451,7 @@ void DialogSystem::handleDialogProgress(NPC& npc)
 	if (npc.scriptIndex >= npc.dialogs.size())
 		return;
 
-	DialogBase* currentDialog = npc.dialogs[npc.scriptIndex];
+	DialogBase* currentDialog = npc.dialogs[npc.scriptIndex].get();
 
 	if (currentDialog->type == DialogType::DIALOG) {
 		Dialog* dialog = static_cast<Dialog*>(currentDialog);

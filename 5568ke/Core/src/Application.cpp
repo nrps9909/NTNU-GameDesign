@@ -455,19 +455,19 @@ void Application::render_()
 	// Update ImGui windows
 	ImGuiManagerRef.newFrame();
 
-	if (showSceneManager_)
-		ImGuiManagerRef.drawSceneGameObjectManager(sceneRef);
+	// if (showSceneManager_)
+	// ImGuiManagerRef.drawSceneGameObjectManager(sceneRef);
 
-	if (showAnimationUI_)
-		ImGuiManagerRef.drawAnimationControlPanel(sceneRef);
+	// if (showAnimationUI_)
+	// ImGuiManagerRef.drawAnimationControlPanel(sceneRef);
 
-	if (showStatsWindow_)
-		ImGuiManagerRef.drawStatusWindow(sceneRef);
+	// if (showStatsWindow_)
+	// ImGuiManagerRef.drawStatusWindow(sceneRef);
 
-	if (showSceneControlsWindow_)
-		ImGuiManagerRef.drawSceneControlWindow(sceneRef);
+	// if (showSceneControlsWindow_)
+	// ImGuiManagerRef.drawSceneControlWindow(sceneRef);
 
-	// 渲染對話系統 - 添加這行（應該在所有其他 ImGui 內容之後）
+	// 渲染對話系統
 	dialogSysRef.render(sceneRef);
 
 	// Render ImGui on top of the scene
