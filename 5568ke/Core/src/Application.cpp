@@ -121,6 +121,8 @@ void Application::setupDefaultScene_()
 		// Initialize renderer
 		rendererRef.init();
 
+		std::shared_ptr<GameObject> teacherGO = nullptr; // 保存老師角色
+
 		{
 			// Load Ina
 			std::string const inaPath = "assets/models/smo_ina/scene.gltf";
@@ -134,7 +136,7 @@ void Application::setupDefaultScene_()
 					goPtr->rotationDeg.y = 50;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+
 					animStateRef.characterMoveMode = true;
 				}
 
@@ -147,7 +149,7 @@ void Application::setupDefaultScene_()
 		}
 
 		{
-			// Load ame
+			// Load ame - 當作老師角色
 			std::string const amePath = "assets/models/smo_ame/scene.gltf";
 			std::string const ameName = "ame";
 			std::shared_ptr<Model> ameModel = registryRef.loadModel(amePath, ameName);
@@ -159,14 +161,17 @@ void Application::setupDefaultScene_()
 					goPtr->rotationDeg.y = -90;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+
+					// 設置為老師角色，包含開場劇情
+					teacherGO = goPtr;
+
 					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
 
 		{
-			// Load calli
+			// Load calli - 角色A (周理安)
 			std::string const calliPath = "assets/models/smo_calli/scene.gltf";
 			std::string const calliName = "calli";
 			std::shared_ptr<Model> calliModel = registryRef.loadModel(calliPath, calliName);
@@ -179,14 +184,17 @@ void Application::setupDefaultScene_()
 					goPtr->rotationDeg.y = -161;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+
+					// 初始化角色A的劇情
+					initA(goPtr);
+
 					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
 
 		{
-			// Load kiara
+			// Load kiara - 角色B (林夢瑤)
 			std::string const kiaraPath = "assets/models/smo_kiara/scene.gltf";
 			std::string const kiaraName = "kiara";
 			std::shared_ptr<Model> kiaraModel = registryRef.loadModel(kiaraPath, kiaraName);
@@ -198,14 +206,17 @@ void Application::setupDefaultScene_()
 					goPtr->rotationDeg.y = -42;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+
+					// 初始化角色C的劇情
+					initB(goPtr);
+
 					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
 
 		{
-			// Load gura
+			// Load gura - 角色C (沈奕恆)
 			std::string const guraPath = "assets/models/smo_gura/scene.gltf";
 			std::string const guraName = "gura";
 			std::shared_ptr<Model> guraModel = registryRef.loadModel(guraPath, guraName);
@@ -218,7 +229,9 @@ void Application::setupDefaultScene_()
 					goPtr->rotationDeg.y = -141.503f;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
-					dialogSysRef.addNPC(goPtr, {"Hello!", "Nice to meet you."}, {"Bye"});
+
+					initC(goPtr);
+
 					animStateRef.characterMoveMode = true;
 				}
 			}
@@ -239,8 +252,14 @@ void Application::setupDefaultScene_()
 			}
 		}
 
+		// 最後初始化老師的開場劇情（包含哥布林測驗）
+		if (teacherGO) {
+			initBegin(teacherGO);
+			std::cout << "[Application] Dialog system initialized with teacher and character routes" << std::endl;
+		}
+
 	} catch (std::runtime_error const& error) {
-		// std::cout << error.what() << std::endl;
+		std::cout << error.what() << std::endl;
 	}
 }
 
@@ -362,6 +381,10 @@ void Application::tick_(float dt)
 	// Process input (keyboard, mouse)
 	processInput_(dt);
 
+	// 更新對話系統 - 添加這兩行
+	dialogSysRef.update(sceneRef, dt);
+	dialogSysRef.processInput(window_);
+
 	// Look up the target animateGO
 	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName);
 	if (!animateGO)
@@ -388,25 +411,20 @@ void Application::tick_(float dt)
 	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
 		auto model = animateGO->getModel();
 		if (!model || model->animations.empty()) {
-			// If the selected animateGO has no animations, stop the animation playback instead of skipping the rest of this tick to keep camera and UI responsive.
 			animStateRef.stop();
 		}
 		else {
-			// Ensure clip index is within bounds
 			if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 				animStateRef.clipIndex = 0;
 
-			// Advance animation time
 			auto& clip = model->animations[animStateRef.clipIndex];
 			animStateRef.currentTime += dt * animStateRef.getAnimateSpeed();
 
-			// Wrap time if the clip should loop
 			float duration = clip->getDuration();
 			if (duration > 0.0f && animStateRef.currentTime > duration) {
 				animStateRef.currentTime = std::fmod(animStateRef.currentTime, duration);
 			}
 
-			// Apply the animation pose and update matrices
 			clip->setAnimationFrame(model->nodes, animStateRef.currentTime);
 			model->updateLocalMatrices();
 		}
@@ -414,12 +432,10 @@ void Application::tick_(float dt)
 
 	collisionSysRef.update();
 
-	// Update camera position and matrices
 	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty())
 		sceneRef.cam.updateFollow(animateGO->position, animStateRef.followDistance, animStateRef.followHeight);
 
 	sceneRef.cam.updateMatrices(window_);
-	dialogSysRef.update(sceneRef, dt);
 }
 
 void Application::render_()
@@ -451,7 +467,9 @@ void Application::render_()
 	if (showSceneControlsWindow_)
 		ImGuiManagerRef.drawSceneControlWindow(sceneRef);
 
+	// 渲染對話系統 - 添加這行（應該在所有其他 ImGui 內容之後）
 	dialogSysRef.render(sceneRef);
+
 	// Render ImGui on top of the scene
 	ImGuiManagerRef.render();
 
