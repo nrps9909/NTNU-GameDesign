@@ -349,7 +349,13 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
 
 			for (size_t i = 0; i < quiz.options.size(); ++i) {
 				if (ImGui::Button(quiz.options[i].c_str(), ImVec2(-1, 0))) {
-					const_cast<Quiz&>(quiz).userIndex = static_cast<int>(i);
+					Quiz& mutableQuiz = const_cast<Quiz&>(quiz);
+					mutableQuiz.userIndex = static_cast<int>(i);
+					
+					// 累計分數
+					if (!quiz.v_score.empty() && i < quiz.v_score.size()) {
+						npc.totalScore += quiz.v_score[i];
+					}
 				}
 				ImGui::Spacing();
 			}
@@ -364,8 +370,37 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
 				ImGui::TextWrapped("%s", quiz.feedback[quiz.userIndex].c_str());
 			}
 
+			// 顯示當前總分（可選）
+			ImGui::Spacing();
+			ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "當前總分: %d", npc.totalScore);
+
 			ImGui::Spacing();
 			if (ImGui::Button("繼續", ImVec2(-1, 30))) {
+				// 檢查是否為最後一個Quiz，如果是則決定路線
+				bool isLastQuiz = true;
+				for (size_t i = npc.scriptIndex + 1; i < npc.dialogs.size(); ++i) {
+					if (npc.dialogs[i]->type == DialogType::QUIZ) {
+						isLastQuiz = false;
+						break;
+					}
+				}
+				
+				if (isLastQuiz) {
+					// 根據分數跳到對應結局
+					// 哥布林標準：分數越低越好（0-25分為好結局）
+					bool shouldGetGoodEnding = (npc.totalScore <= 25);
+					
+					// 尋找對應的結局
+					for (size_t i = npc.scriptIndex + 1; i < npc.dialogs.size(); ++i) {
+						if ((shouldGetGoodEnding && npc.dialogs[i]->type == DialogType::GOODEND) ||
+							(!shouldGetGoodEnding && npc.dialogs[i]->type == DialogType::BADEND)) {
+							npc.scriptIndex = i;
+							npc.lineIndex = 0;
+							return;
+						}
+					}
+				}
+				
 				npc.scriptIndex++;
 				npc.lineIndex = 0;
 			}
