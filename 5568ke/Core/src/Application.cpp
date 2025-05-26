@@ -124,14 +124,18 @@ void Application::setupDefaultScene_()
 		std::shared_ptr<GameObject> teacherGO = nullptr; // 保存老師角色
 
 		{
-			// Load Ina
+			// Load Ina - This will be our Player
 			std::string const inaPath = "assets/models/smo_ina/scene.gltf";
-			std::string const inaName = "ina";
-			std::shared_ptr<Model> inaModel = registryRef.loadModel(inaPath, inaName);
+			std::string const playerName = "Player"; // MODIFIED: Change name to "Player" for DialogSystem
+			std::shared_ptr<Model> playerModel = registryRef.loadModel(inaPath, playerName); // MODIFIED: Use playerName
 
-			if (inaModel) {
-				auto goPtr = registryRef.addModelToScene(sceneRef, inaModel);
+			if (playerModel) {
+				// When playerModel is used to create a GameObject,
+				// the GameObject's name will be initialized from playerModel->modelName,
+				// which should now be "Player".
+				auto goPtr = registryRef.addModelToScene(sceneRef, playerModel);
 				if (goPtr) {
+					// goPtr->name should now be "Player" due to GameObject constructor
 					goPtr->position = {5.2f, 0.12f, -1.0f};
 					goPtr->rotationDeg.y = 50;
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
@@ -141,10 +145,11 @@ void Application::setupDefaultScene_()
 				}
 
 				// Store game object name in animation state
-				animStateRef.gameObjectName = inaName;
+				// This ensures that movement controls and camera follow the "Player" GameObject
+				animStateRef.gameObjectName = playerName; // MODIFIED: Use playerName ("Player")
 
-				// Set up camera
-				sceneRef.setupCameraToViewGameObject(inaName);
+				// Set up camera to view the "Player" GameObject
+				sceneRef.setupCameraToViewGameObject(playerName); // MODIFIED: Use playerName ("Player")
 			}
 		}
 
@@ -165,7 +170,7 @@ void Application::setupDefaultScene_()
 					// 設置為老師角色，包含開場劇情
 					teacherGO = goPtr;
 
-					animStateRef.characterMoveMode = true;
+					// Note: animStateRef.characterMoveMode is already set to true by player
 				}
 			}
 		}
@@ -187,8 +192,6 @@ void Application::setupDefaultScene_()
 
 					// 初始化角色A的劇情
 					initA(goPtr);
-
-					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
@@ -207,10 +210,8 @@ void Application::setupDefaultScene_()
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
 
-					// 初始化角色C的劇情
+					// 初始化角色B的劇情
 					initB(goPtr);
-
-					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
@@ -230,9 +231,8 @@ void Application::setupDefaultScene_()
 					auto modelCol = std::make_shared<AABBCollider>(goPtr);
 					collisionSysRef.add(modelCol);
 
+                    // 初始化角色C的劇情
 					initC(goPtr);
-
-					animStateRef.characterMoveMode = true;
 				}
 			}
 		}
@@ -270,6 +270,7 @@ void Application::processInput_(float dt)
 	bool charMode = animStateRef.characterMoveMode;
 	if (cursorMode == GLFW_CURSOR_DISABLED) {
 		if (charMode) {
+			// animStateRef.gameObjectName should be "Player" now
 			auto goPtr = sceneRef.findGameObject(animStateRef.gameObjectName);
 			if (goPtr) {
 				GameObject& gameObject = *goPtr;
@@ -300,6 +301,11 @@ void Application::processInput_(float dt)
 					int clip = animStateRef.clipIndex;
 					if (static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size())
 						clip = 0;
+                    
+                    if (clip < 0 || static_cast<std::size_t>(clip) >= gameObject.getModel()->animations.size() || !gameObject.getModel()->animations[clip]) {
+                        // std::cerr << "[Application::processInput_] Warning: Invalid clip index or null animation clip for " << std::string(gameObject.name) << ". Clip index: " << clip << std::endl;
+                        return;
+                    }
 
 					gameObject.getModel()->animations[clip]->setAnimationFrame(gameObject.getModel()->nodes, 0.0f);
 					gameObject.getModel()->updateLocalMatrices();
@@ -323,8 +329,10 @@ void Application::processInput_(float dt)
 
 				// Changed the statue of animation
 				if (startedMoving) {
-					animStateRef.play(std::min<int>(animStateRef.clipIndex, gameObject.getModel()->animations.size() - 1), 0.0f);
-					resetClipToFirstFrame(gameObject); // Start from frame 0
+                    if (gameObject.getModel() && !gameObject.getModel()->animations.empty()) {
+					    animStateRef.play(std::min<int>(animStateRef.clipIndex, gameObject.getModel()->animations.size() - 1), 0.0f);
+					    resetClipToFirstFrame(gameObject); // Start from frame 0
+                    }
 				}
 				else if (stoppedMoving) {
 					animStateRef.stop();
@@ -354,6 +362,13 @@ void Application::processInput_(float dt)
 		// Ensure valid clip index
 		if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
 			animStateRef.clipIndex = 0;
+        
+        if (animStateRef.clipIndex < 0 || static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size() || !model->animations[animStateRef.clipIndex]) {
+            // std::cerr << "[Application::processInput_] Warning: Animating with invalid clip index or null animation clip for " << std::string(gameObject->name) << ". Clip index: " << animStateRef.clipIndex << std::endl;
+            animStateRef.stop();
+            return;
+        }
+
 
 		// Get clip
 		auto& clip = model->animations[animStateRef.clipIndex];
@@ -363,9 +378,12 @@ void Application::processInput_(float dt)
 
 		// Loop if needed
 		float duration = clip->getDuration();
-		if (animStateRef.currentTime > duration) {
+		if (duration > 0.0f && animStateRef.currentTime > duration) {
 			animStateRef.currentTime = std::fmod(animStateRef.currentTime, duration);
-		}
+		} else if (duration <= 0.0f) {
+            animStateRef.currentTime = 0.0f; // Prevent issues with zero/negative duration
+        }
+
 
 		// Update animation frame
 		// std::cout << "[Animation] Updating frame: time=" << animStateRef.currentTime << ", gameObject=" << animStateRef.gameObjectName
@@ -385,55 +403,37 @@ void Application::tick_(float dt)
 	dialogSysRef.update(sceneRef, dt);
 	dialogSysRef.processInput(window_);
 
-	// Look up the target animateGO
-	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName);
-	if (!animateGO)
-		return;
+	// Look up the target animateGO (Player)
+	auto animateGO = sceneRef.findGameObject(animStateRef.gameObjectName); 
+	// No early return if not found, other game objects might still need updates.
 
 	for (auto& goPtr : sceneRef.gameObjects) {
+		if (!goPtr) continue;
 		auto& go = *goPtr;
 		if (!go.active)
 			continue;
 
-		// Apply gravity and integrate velocity
-		// go.velocity.y -= 9.8f * dt;
-		go.position += go.velocity * dt;
-		go.updateTransformMatrix();
+		// Apply gravity and integrate velocity (currently commented out)
+		// go.velocity.y -= 9.8f * dt; 
+		// go.position += go.velocity * dt;
+		// go.updateTransformMatrix();
 
-		if (go.worldBBox.min.y <= 0.0f) {
-			go.position.y = 0.0f;
-			go.velocity.y = 0.0f;
-			go.updateTransformMatrix();
-		}
+		// if (go.worldBBox.min.y <= 0.0f) {
+		// 	go.position.y = 0.0f;
+		// 	go.velocity.y = 0.0f;
+		// 	go.updateTransformMatrix();
+		// }
 	}
 
-	// Update animation state
-	if (animStateRef.isAnimating && !animStateRef.gameObjectName.empty()) {
-		auto model = animateGO->getModel();
-		if (!model || model->animations.empty()) {
-			animStateRef.stop();
-		}
-		else {
-			if (static_cast<std::size_t>(animStateRef.clipIndex) >= model->animations.size())
-				animStateRef.clipIndex = 0;
-
-			auto& clip = model->animations[animStateRef.clipIndex];
-			animStateRef.currentTime += dt * animStateRef.getAnimateSpeed();
-
-			float duration = clip->getDuration();
-			if (duration > 0.0f && animStateRef.currentTime > duration) {
-				animStateRef.currentTime = std::fmod(animStateRef.currentTime, duration);
-			}
-
-			clip->setAnimationFrame(model->nodes, animStateRef.currentTime);
-			model->updateLocalMatrices();
-		}
-	}
+	// Update animation state (This is now handled in processInput_ for better logic separation)
+	// The code block for animation update was moved to processInput_ to ensure it's tied to input state (moving/stopped)
+	// and whether the game is in character move mode.
 
 	collisionSysRef.update();
 
-	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty())
+	if (animStateRef.characterMoveMode && !animStateRef.gameObjectName.empty() && animateGO) {
 		sceneRef.cam.updateFollow(animateGO->position, animStateRef.followDistance, animStateRef.followHeight);
+    }
 
 	sceneRef.cam.updateMatrices(window_);
 }
@@ -485,8 +485,11 @@ void Application::loop_()
 	while (!glfwWindowShouldClose(window_)) {
 		// Calculate delta time
 		double now = glfwGetTime();
-		float dt = float(now - prevTime_);
+		float dt = static_cast<float>(now - prevTime_);
 		prevTime_ = now;
+
+        if (dt < 0.0f) dt = 0.0f; // Guard against negative delta time if system clock changes
+        if (dt > 0.1f) dt = 0.1f; // Cap delta time to prevent large jumps
 
 		tick_(dt);
 		render_();
@@ -506,6 +509,9 @@ void Application::cleanup_()
 	rendererRef.cleanup();
 
 	// Clean up GLFW
-	glfwDestroyWindow(window_);
+    if (window_) {
+	    glfwDestroyWindow(window_);
+        window_ = nullptr;
+    }
 	glfwTerminate();
 }
