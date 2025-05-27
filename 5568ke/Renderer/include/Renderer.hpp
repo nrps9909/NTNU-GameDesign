@@ -31,9 +31,9 @@ public:
 
 	// Flag to control call visualizer
 	bool showSkybox{true};
-	bool showSkeletons{true};
+	bool showSkeletons{false};
 	bool showLightPoint{true};
-	bool showBBox{true};
+	bool showBBox{false};
 
 	SkeletonVisualizer& skeletonVisualizerRef = SkeletonVisualizer::getInstance();
 	LightPointVisualizer& lightVisualizerRef = LightPointVisualizer::getInstance();
