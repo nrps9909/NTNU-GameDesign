@@ -323,9 +323,16 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x * 0.8f, ImGui::GetIO().DisplaySize.y * 0.3f), ImGuiCond_Always); 
 	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f)); 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-
 	if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
+<<<<<<< Updated upstream
         float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.5f;
+=======
+		// Set larger font scale for dialog text  
+		ImGui::SetWindowFontScale(1.8f); // Increased from 1.3f to 1.8f for much larger text
+		
+        // 為按鈕稍微增加 footerHeight
+        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
+>>>>>>> Stashed changes
 		ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
@@ -365,9 +372,50 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 		}
         char page_buf[32];
         snprintf(page_buf, sizeof(page_buf), "(%zu/%zu)", npc.lineIndex + 1, dialog.lines.size());
+<<<<<<< Updated upstream
 		ImVec2 textSize = ImGui::CalcTextSize(page_buf);
         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - textSize.x - ImGui::GetStyle().FramePadding.x); 
 		ImGui::TextDisabled("%s", page_buf);
+=======
+        ImVec2 pageTextSize = ImGui::CalcTextSize(page_buf);
+
+        // Position Leave Button to the far right
+        float leaveButtonPosX = ImGui::GetWindowContentRegionMax().x - leaveButtonWidth - padding;
+        
+        // Position Page Number to the left of the Leave Button
+        float pageNumPosX = leaveButtonPosX - pageTextSize.x - spacing;
+
+        // Ensure "Press E" text doesn't overlap with page numbers or button
+        // This is a simple check, might need more robust layout for very narrow windows
+        if (ImGui::GetCursorPosX() < pageNumPosX - spacing) {
+             // It's fine, elements are naturally spaced
+        } else {
+            // Not enough space, might need to rethink layout or make button smaller
+            // For now, just let them be placed
+        }
+
+        ImGui::SameLine(pageNumPosX > ImGui::GetCursorPosX() ? pageNumPosX : 0); // Move to position for page number
+        ImGui::TextDisabled("%s", page_buf);
+
+        ImGui::SameLine(leaveButtonPosX > ImGui::GetCursorPosX() ? leaveButtonPosX : 0); // Move to position for leave button
+        
+        if (ImGui::Button("離開##DialogLeave", ImVec2(leaveButtonWidth, 0))) { // Using 0 for height makes it default
+			npc.inDialog = false;
+            // Optional: Reset dialog progress or disable the route for this NPC
+            // npc.scriptIndex = 0;
+            // npc.lineIndex = 0;
+            // npc.routeEnabled = false; // If you want to prevent immediate re-interaction
+            if (npc.go) {
+                std::cout << "[DialogSystem] Player left dialog with NPC: " << npc.go->name.data() << std::endl;
+            } else {
+                std::cout << "[DialogSystem] Player left dialog with NPC (Unknown GO)." << std::endl;
+            }
+            //AudioManager::getInstance().playSoundEffect("ui_cancel_sfx"); // Example sfx
+		}
+		
+		// Reset font scale before ending window
+		ImGui::SetWindowFontScale(1.0f);
+>>>>>>> Stashed changes
 		ImGui::End();
 	}
 }
@@ -380,6 +428,9 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
 
 	if (ImGui::Begin("##QuizWindow", nullptr, flags)) {
+		// Set larger font scale for quiz text
+		ImGui::SetWindowFontScale(1.2f);
+		
 		ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
         ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.3f, 1.0f), "問題:");
 		ImGui::Separator(); ImGui::Spacing();
@@ -469,9 +520,11 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
                     if (npc.scriptIndex < npc.dialogs.size() && npc.dialogs[npc.scriptIndex] && npc.dialogs[npc.scriptIndex]->type == DialogType::QUIZ) {
                         static_cast<Quiz*>(npc.dialogs[npc.scriptIndex].get())->userIndex = -1;
                     }
-                }
-			}
+                }			}
 		}
+		
+		// Reset font scale before ending window
+		ImGui::SetWindowFontScale(1.0f);
 		ImGui::End();
 	}
 }
