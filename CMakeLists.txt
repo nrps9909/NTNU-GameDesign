@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14) 
-project(5568ke LANGUAGES C CXX)
+project(Gbolin LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -75,6 +75,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glad
     ${OPENGL_LIBRARIES}
 )
+
+if (WIN32 AND MSVC)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    WIN32_EXECUTABLE ON
+    LINK_FLAGS        "/ENTRY:mainCRTStartup"
+  )
+endif()
 
 # Copy assets to build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
