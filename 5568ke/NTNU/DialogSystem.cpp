@@ -439,45 +439,119 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 
 void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
 {
-	ImVec2 windowSize(std::min(ImGui::GetIO().DisplaySize.x * 0.7f, 900.0f), ImGui::GetIO().DisplaySize.y * 0.75f);
+    // Get display size for responsive design
+    ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+    float scaleFactor = std::min(displaySize.x / 1920.0f, displaySize.y / 1080.0f);
+    scaleFactor = std::max(scaleFactor, 0.7f); // Higher minimum scale factor for quiz
+    
+    // Much larger quiz window - 90% width and 85% height
+    ImVec2 windowSize(displaySize.x * 0.9f, displaySize.y * 0.85f);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
+    ImGui::SetNextWindowPos(ImVec2(displaySize.x * 0.5f, displaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
 
-	if (ImGui::Begin("##QuizWindow", nullptr, flags)) {
-		// Set larger font scale for quiz text
-		ImGui::SetWindowFontScale(1.2f);
-		
-		ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
-        ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.3f, 1.0f), "問題:");
-		ImGui::Separator(); ImGui::Spacing();
-		ImGui::TextWrapped("%s", quiz.question.c_str());
-		ImGui::PopTextWrapPos(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+    if (ImGui::Begin("##QuizWindow", nullptr, flags)) {
+        // Much larger font scale for quiz text
+        float fontScale = 2.2f * scaleFactor; // Significantly increased font scale
+        ImGui::SetWindowFontScale(fontScale);
+        
+        // Question section with enhanced styling
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
+        ImGui::Text("問題:");
+        ImGui::PopStyleColor();
+        ImGui::Separator(); 
+        ImGui::Spacing();
+        ImGui::Spacing();
+        
+        // Question text with better formatting
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+        ImGui::TextWrapped("%s", quiz.question.c_str());
+        ImGui::PopStyleColor();
+        ImGui::PopTextWrapPos(); 
+        ImGui::Spacing(); 
+        ImGui::Spacing();
+        ImGui::Separator(); 
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-		if (quiz.userIndex == -1) { 
-			ImGui::Text("請選擇你的答案:"); ImGui::Spacing();
-            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 2.0f; 
-			for (size_t i = 0; i < quiz.options.size(); ++i) {
-				if (ImGui::Button(quiz.options[i].c_str(), ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
-					quiz.userIndex = static_cast<int>(i);
-					if (!quiz.v_score.empty() && i < quiz.v_score.size()) {
-						npc.totalScore += quiz.v_score[i];
-					}
-				}
-				ImGui::Spacing();
-			}
-		} else { 
-			ImGui::TextColored(ImVec4(0.2f, 0.8f, 1.0f, 1.0f), "你的選擇:");
-			ImGui::TextWrapped("%s", quiz.options[quiz.userIndex].c_str()); ImGui::Spacing();
-			if (!quiz.feedback.empty() && static_cast<size_t>(quiz.userIndex) < quiz.feedback.size() && !quiz.feedback[quiz.userIndex].empty()) {
-				ImGui::Separator(); ImGui::Spacing();
-				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "回應:");
-				ImGui::TextWrapped("%s", quiz.feedback[quiz.userIndex].c_str()); ImGui::Spacing();
-			}
-			ImGui::Separator(); ImGui::Spacing();
-			ImGui::Text("當前哥布林指數 (得分越低代表越哥布林): %d", npc.totalScore); ImGui::Spacing();
-            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 2.0f;
-			if (ImGui::Button("繼續", ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
+        if (quiz.userIndex == -1) { 
+            // Options selection with larger buttons
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
+            ImGui::Text("請選擇你的答案:"); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 3.5f; // Much larger buttons
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f * scaleFactor);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(15 * scaleFactor, 12 * scaleFactor));
+            
+            for (size_t i = 0; i < quiz.options.size(); ++i) {
+                // Enhanced button styling
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.3f, 0.8f, 0.8f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.4f, 0.9f, 0.9f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.2f, 0.7f, 1.0f));
+                
+                if (ImGui::Button(quiz.options[i].c_str(), ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
+                    quiz.userIndex = static_cast<int>(i);
+                    if (!quiz.v_score.empty() && i < quiz.v_score.size()) {
+                        npc.totalScore += quiz.v_score[i];
+                    }
+                }
+                
+                ImGui::PopStyleColor(3);
+                ImGui::Spacing();
+                ImGui::Spacing();
+            }
+            ImGui::PopStyleVar(2);
+        } else { 
+            // Show selected answer and feedback
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+            ImGui::Text("你的選擇:");
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.6f, 1.0f));
+            ImGui::TextWrapped("%s", quiz.options[quiz.userIndex].c_str()); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Feedback section
+            if (!quiz.feedback.empty() && static_cast<size_t>(quiz.userIndex) < quiz.feedback.size() && !quiz.feedback[quiz.userIndex].empty()) {
+                ImGui::Separator(); 
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.9f, 0.7f, 1.0f));
+                ImGui::Text("回應:");
+                ImGui::PopStyleColor();
+                ImGui::Spacing();
+                ImGui::TextWrapped("%s", quiz.feedback[quiz.userIndex].c_str()); 
+                ImGui::Spacing();
+                ImGui::Spacing();
+            }
+            
+            ImGui::Separator(); 
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Score display
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+            ImGui::Text("當前哥布林指數 (得分越低代表越哥布林): %d", npc.totalScore); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Continue button with enhanced styling
+            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 3.0f;
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f * scaleFactor);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20 * scaleFactor, 15 * scaleFactor));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 0.8f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.8f, 0.4f, 0.9f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+            
+            if (ImGui::Button("繼續", ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
 				if (quiz.question.find("選擇你的學習路線") != std::string::npos) {
 					// This 'npc' is the teacher NPC.
 					npc.inDialog = false; 
@@ -531,19 +605,23 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
                         static_cast<Quiz*>(npc.dialogs[npc.scriptIndex].get())->userIndex = -1;
                     } else if (npc.scriptIndex >= npc.dialogs.size()) {
                         npc.inDialog = false; 
-                    }
-				} else {
-				    npc.scriptIndex++; npc.lineIndex = 0;
+                    }                } else {
+                    npc.scriptIndex++; npc.lineIndex = 0;
                     if (npc.scriptIndex < npc.dialogs.size() && npc.dialogs[npc.scriptIndex] && npc.dialogs[npc.scriptIndex]->type == DialogType::QUIZ) {
                         static_cast<Quiz*>(npc.dialogs[npc.scriptIndex].get())->userIndex = -1;
                     }
-                }			}
-		}
-		
-		// Reset font scale before ending window
-		ImGui::SetWindowFontScale(1.0f);
-		ImGui::End();
-	}
+                }
+            }
+            
+            // Clean up button styling
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(2);
+        }
+        
+        // Reset font scale before ending window
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    ImGui::End();
 }
 
 void DialogSystem::renderEnding(Dialog const& ending, NPC& npc, bool isGoodEnding)
