@@ -21,8 +21,9 @@ void MainMenu::render()
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
                             ImGuiWindowFlags_NoScrollbar;
-    
-    if (ImGui::Begin("##MainMenu", nullptr, flags)) {        // Game title        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
+      if (ImGui::Begin("##MainMenu", nullptr, flags)) {
+        // Game title
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
         ImGui::SetWindowFontScale(4.0f); // Increased to 4.0f for much larger title
         
         ImVec2 titleSize = ImGui::CalcTextSize("教室的割布麟");

@@ -324,15 +324,15 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f)); 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
-<<<<<<< Updated upstream
-        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.5f;
-=======
 		// Set larger font scale for dialog text  
 		ImGui::SetWindowFontScale(1.8f); // Increased from 1.3f to 1.8f for much larger text
 		
         // 為按鈕稍微增加 footerHeight
         float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
->>>>>>> Stashed changes
+        float padding = ImGui::GetStyle().FramePadding.x;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float leaveButtonWidth = 80.0f;
+        
 		ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
@@ -372,11 +372,6 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 		}
         char page_buf[32];
         snprintf(page_buf, sizeof(page_buf), "(%zu/%zu)", npc.lineIndex + 1, dialog.lines.size());
-<<<<<<< Updated upstream
-		ImVec2 textSize = ImGui::CalcTextSize(page_buf);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - textSize.x - ImGui::GetStyle().FramePadding.x); 
-		ImGui::TextDisabled("%s", page_buf);
-=======
         ImVec2 pageTextSize = ImGui::CalcTextSize(page_buf);
 
         // Position Leave Button to the far right
@@ -415,7 +410,6 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 		
 		// Reset font scale before ending window
 		ImGui::SetWindowFontScale(1.0f);
->>>>>>> Stashed changes
 		ImGui::End();
 	}
 }
