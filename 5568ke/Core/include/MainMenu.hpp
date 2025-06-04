@@ -29,4 +29,5 @@ private:
     bool visible_ = true;  // Show menu by default
     bool startGame_ = false;
     bool exitGame_ = false;
+    bool showInstructions_ = false;
 };

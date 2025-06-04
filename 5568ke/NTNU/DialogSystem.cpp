@@ -320,98 +320,121 @@ namespace {
 
 void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 {
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x * 0.8f, ImGui::GetIO().DisplaySize.y * 0.3f), ImGuiCond_Always); 
-	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f)); 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-	if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
-		// Set larger font scale for dialog text  
-		ImGui::SetWindowFontScale(1.8f); // Increased from 1.3f to 1.8f for much larger text
-		
-        // 為按鈕稍微增加 footerHeight
-        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
-        float padding = ImGui::GetStyle().FramePadding.x;
-        float spacing = ImGui::GetStyle().ItemSpacing.x;
-        float leaveButtonWidth = 80.0f;
+    // Get display size for responsive design
+    ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+    float scaleFactor = std::min(displaySize.x / 1920.0f, displaySize.y / 1080.0f);
+    scaleFactor = std::max(scaleFactor, 0.6f); // Minimum scale factor for readability
+    
+    // Responsive dialog window sizing
+    float dialogWidth = displaySize.x * 0.85f;  // Slightly wider for better text display
+    float dialogHeight = displaySize.y * 0.35f; // Slightly taller for more content
+    
+    ImGui::SetNextWindowSize(ImVec2(dialogWidth, dialogHeight), ImGuiCond_Always); 
+    ImGui::SetNextWindowPos(ImVec2(displaySize.x * 0.5f, displaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f)); 
+    
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
+                            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | 
+                            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    
+    if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
+        // Set responsive font scale for dialog text  
+        float fontScale = 2.0f * scaleFactor; // Increased base font scale
+        ImGui::SetWindowFontScale(fontScale);
         
-		ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+        // Responsive spacing and padding
+        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 3.2f; // More space for larger UI
+        float padding = ImGui::GetStyle().FramePadding.x * scaleFactor;
+        float spacing = ImGui::GetStyle().ItemSpacing.x * scaleFactor;
+        float leaveButtonWidth = 100.0f * scaleFactor; // Larger button
+        
+        ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
-			std::string const& line = dialog.lines[i];
-			if (isNarrativeLineLocal(line)) { 
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); 
+        for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
+            std::string const& line = dialog.lines[i];
+            if (isNarrativeLineLocal(line)) { 
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); 
                 ImGui::TextWrapped("%s", line.c_str());
-				ImGui::PopStyleColor();
-			} else {
-				size_t colonPos = line.find("："); 
-				if (colonPos == std::string::npos) colonPos = line.find(":"); 
-				if (colonPos != std::string::npos) {
-					std::string speaker = line.substr(0, colonPos);
-					std::string content = line.substr(colonPos + (line.substr(colonPos, 3) == "：" ? 3 : 1)); 
+                ImGui::PopStyleColor();
+            } else {
+                size_t colonPos = line.find("："); 
+                if (colonPos == std::string::npos) colonPos = line.find(":"); 
+                if (colonPos != std::string::npos) {
+                    std::string speaker = line.substr(0, colonPos);
+                    std::string content = line.substr(colonPos + (line.substr(colonPos, 3) == "：" ? 3 : 1)); 
                     content.erase(0, content.find_first_not_of(" \t\n\r\f\v"));
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.2f, 1.0f)); 
-					ImGui::TextUnformatted(speaker.c_str());
+                    
+                    // Enhanced speaker name styling
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f)); // Brighter yellow
+                    ImGui::TextUnformatted(speaker.c_str());
                     ImGui::PopStyleColor();
-					ImGui::SameLine();
-					ImGui::TextWrapped("%s", content.c_str());
-				} else {
-					ImGui::TextWrapped("%s", line.c_str());
-				}
-			}
-            ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight() * 0.3f)); 
-		}
+                    ImGui::SameLine();
+                    ImGui::TextWrapped("%s", content.c_str());
+                } else {
+                    ImGui::TextWrapped("%s", line.c_str());
+                }
+            }
+            // More spacing between lines for better readability
+            ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight() * 0.4f)); 
+        }
+        
         if (npc.lineIndex == 0 || ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetTextLineHeight() * 2.0f ) {
              ImGui::SetScrollHereY(1.0f);
         }
-		ImGui::EndChild();
-		ImGui::Separator();
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y); 
-		if (npc.lineIndex < dialog.lines.size() - 1) {
-			ImGui::TextDisabled("Press E to continue...");
-		} else {
-			ImGui::TextDisabled("Press E to finish...");
-		}
+        ImGui::EndChild();
+        
+        ImGui::Separator();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y * scaleFactor); 
+        
+        // Status text with enhanced styling
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        if (npc.lineIndex < dialog.lines.size() - 1) {
+            ImGui::Text("按 E 鍵繼續...");
+        } else {
+            ImGui::Text("按 E 鍵結束對話...");
+        }
+        ImGui::PopStyleColor();
+        
+        // Page indicator with larger text
         char page_buf[32];
         snprintf(page_buf, sizeof(page_buf), "(%zu/%zu)", npc.lineIndex + 1, dialog.lines.size());
         ImVec2 pageTextSize = ImGui::CalcTextSize(page_buf);
 
-        // Position Leave Button to the far right
+        // Position Leave Button to the far right with responsive sizing
         float leaveButtonPosX = ImGui::GetWindowContentRegionMax().x - leaveButtonWidth - padding;
         
         // Position Page Number to the left of the Leave Button
         float pageNumPosX = leaveButtonPosX - pageTextSize.x - spacing;
 
-        // Ensure "Press E" text doesn't overlap with page numbers or button
-        // This is a simple check, might need more robust layout for very narrow windows
-        if (ImGui::GetCursorPosX() < pageNumPosX - spacing) {
-             // It's fine, elements are naturally spaced
-        } else {
-            // Not enough space, might need to rethink layout or make button smaller
-            // For now, just let them be placed
-        }
+        ImGui::SameLine(pageNumPosX > ImGui::GetCursorPosX() ? pageNumPosX : 0);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+        ImGui::Text("%s", page_buf);
+        ImGui::PopStyleColor();
 
-        ImGui::SameLine(pageNumPosX > ImGui::GetCursorPosX() ? pageNumPosX : 0); // Move to position for page number
-        ImGui::TextDisabled("%s", page_buf);
-
-        ImGui::SameLine(leaveButtonPosX > ImGui::GetCursorPosX() ? leaveButtonPosX : 0); // Move to position for leave button
+        ImGui::SameLine(leaveButtonPosX > ImGui::GetCursorPosX() ? leaveButtonPosX : 0);
         
-        if (ImGui::Button("離開##DialogLeave", ImVec2(leaveButtonWidth, 0))) { // Using 0 for height makes it default
-			npc.inDialog = false;
+        // Enhanced leave button styling
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f * scaleFactor);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+          if (ImGui::Button("離開", ImVec2(leaveButtonWidth, 40 * scaleFactor))) {
+            npc.inDialog = false;
             // Optional: Reset dialog progress or disable the route for this NPC
             // npc.scriptIndex = 0;
             // npc.lineIndex = 0;
-            // npc.routeEnabled = false; // If you want to prevent immediate re-interaction
             if (npc.go) {
                 std::cout << "[DialogSystem] Player left dialog with NPC: " << npc.go->name.data() << std::endl;
             } else {
                 std::cout << "[DialogSystem] Player left dialog with NPC (Unknown GO)." << std::endl;
             }
-            //AudioManager::getInstance().playSoundEffect("ui_cancel_sfx"); // Example sfx
-		}
-		
-		// Reset font scale before ending window
-		ImGui::SetWindowFontScale(1.0f);
-		ImGui::End();
-	}
+        }
+        
+        ImGui::PopStyleColor(3); // Pop button colors
+        ImGui::PopStyleVar(); // Pop frame rounding
+          // Reset font scale before ending window
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    ImGui::End();
 }
 
 void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)

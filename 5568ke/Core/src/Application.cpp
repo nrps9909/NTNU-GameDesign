@@ -35,7 +35,12 @@ void Application::initWindow_()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window_ = glfwCreateWindow(1280, 720, "5568ke Model Viewer", nullptr, nullptr);
+	// Get primary monitor and its video mode for fullscreen
+	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+	
+	// Create fullscreen window
+	window_ = glfwCreateWindow(mode->width, mode->height, "教室的割布麟", primaryMonitor, nullptr);
 	glfwMakeContextCurrent(window_);
 	glfwSwapInterval(1);
 
