@@ -325,8 +325,20 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
 	if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
+<<<<<<< Updated upstream
         // 為按鈕稍微增加 footerHeight
         float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
+=======
+		// Set larger font scale for dialog text  
+		ImGui::SetWindowFontScale(1.8f); // Increased from 1.3f to 1.8f for much larger text
+		
+        // 為按鈕稍微增加 footerHeight
+        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
+        float padding = ImGui::GetStyle().FramePadding.x;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float leaveButtonWidth = 80.0f;
+        
+>>>>>>> Stashed changes
 		ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
@@ -412,6 +424,12 @@ void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
             }
             //AudioManager::getInstance().playSoundEffect("ui_cancel_sfx"); // Example sfx
 		}
+<<<<<<< Updated upstream
+=======
+		
+		// Reset font scale before ending window
+		ImGui::SetWindowFontScale(1.0f);
+>>>>>>> Stashed changes
 		ImGui::End();
 	}
 }
