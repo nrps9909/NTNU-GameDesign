@@ -8,6 +8,7 @@
 #include "DialogSystem.hpp"
 #include "GlobalAnimationState.hpp"
 #include "ImGuiManager.hpp"
+#include "MainMenu.hpp"
 #include "ModelRegistry.hpp"
 #include "Renderer.hpp"
 #include "Scene.hpp"
@@ -17,11 +18,12 @@ class Application {
 public:
 	Application();
 	~Application();
-
 	int run();
 
+	// Singleton references
 	Scene& sceneRef = Scene::getInstance();
 	ImGuiManager& ImGuiManagerRef = ImGuiManager::getInstance();
+	MainMenu& mainMenuRef = MainMenu::getInstance();
 	ModelRegistry& registryRef = ModelRegistry::getInstance();
 	Renderer& rendererRef = Renderer::getInstance();
 	GlobalAnimationState& animStateRef = GlobalAnimationState::getInstance();
@@ -33,9 +35,9 @@ private:
 	void initWindow_();
 	void initGL_();
 	void initImGui_();
-
 	// Scene setup methods
 	void setupDefaultScene_();
+	void addInvisibleWalls_();
 
 	// Main loop methods
 	void loop_();

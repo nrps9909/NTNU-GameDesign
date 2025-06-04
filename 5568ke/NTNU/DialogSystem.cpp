@@ -225,7 +225,7 @@ void DialogSystem::update(Scene& scene, float dt)
             std::cout << "[DS_Update] NPC '" << std::string(npc_iter.go->name) 
                       << "' (RouteEnabled): Dist to Player=" << distance;
 
-            float const INTERACTION_RANGE = 1.0f; 
+            float const INTERACTION_RANGE = 2.0f; 
             if (distance <= INTERACTION_RANGE) {
                 npc_iter.showIcon = true;
             } else {
@@ -320,158 +320,238 @@ namespace {
 
 void DialogSystem::renderDialog(Dialog const& dialog, NPC& npc)
 {
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x * 0.8f, ImGui::GetIO().DisplaySize.y * 0.3f), ImGuiCond_Always);
-	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-
-	if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
-<<<<<<< Updated upstream
-        // 為按鈕稍微增加 footerHeight
-        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
-=======
-		// Set larger font scale for dialog text  
-		ImGui::SetWindowFontScale(1.8f); // Increased from 1.3f to 1.8f for much larger text
-		
-        // 為按鈕稍微增加 footerHeight
-        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 2.8f; // 根據按鈕大小調整
-        float padding = ImGui::GetStyle().FramePadding.x;
-        float spacing = ImGui::GetStyle().ItemSpacing.x;
-        float leaveButtonWidth = 80.0f;
+    // Get display size for responsive design
+    ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+    float scaleFactor = std::min(displaySize.x / 1920.0f, displaySize.y / 1080.0f);
+    scaleFactor = std::max(scaleFactor, 0.6f); // Minimum scale factor for readability
+    
+    // Responsive dialog window sizing
+    float dialogWidth = displaySize.x * 0.85f;  // Slightly wider for better text display
+    float dialogHeight = displaySize.y * 0.35f; // Slightly taller for more content
+    
+    ImGui::SetNextWindowSize(ImVec2(dialogWidth, dialogHeight), ImGuiCond_Always); 
+    ImGui::SetNextWindowPos(ImVec2(displaySize.x * 0.5f, displaySize.y * 0.95f), ImGuiCond_Always, ImVec2(0.5f, 1.0f)); 
+    
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
+                            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | 
+                            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    
+    if (ImGui::Begin("##DialogWindow", nullptr, flags)) {
+        // Set responsive font scale for dialog text  
+        float fontScale = 2.0f * scaleFactor; // Increased base font scale
+        ImGui::SetWindowFontScale(fontScale);
         
->>>>>>> Stashed changes
-		ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+        // Responsive spacing and padding
+        float footerHeight = ImGui::GetTextLineHeightWithSpacing() * 3.2f; // More space for larger UI
+        float padding = ImGui::GetStyle().FramePadding.x * scaleFactor;
+        float spacing = ImGui::GetStyle().ItemSpacing.x * scaleFactor;
+        float leaveButtonWidth = 100.0f * scaleFactor; // Larger button
+        
+        ImGui::BeginChild("DialogContent", ImVec2(0, ImGui::GetContentRegionAvail().y - footerHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-		for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
-			std::string const& line = dialog.lines[i];
-			if (isNarrativeLineLocal(line)) {
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+        for (size_t i = 0; i <= npc.lineIndex && i < dialog.lines.size(); ++i) {
+            std::string const& line = dialog.lines[i];
+            if (isNarrativeLineLocal(line)) { 
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f)); 
                 ImGui::TextWrapped("%s", line.c_str());
-				ImGui::PopStyleColor();
-			} else {
-				size_t colonPos = line.find("："); // Full-width colon
-				if (colonPos == std::string::npos) colonPos = line.find(":"); // Half-width colon
-				if (colonPos != std::string::npos) {
-					std::string speaker = line.substr(0, colonPos);
-                    // Correctly handle colon length for substr
-					std::string content = line.substr(colonPos + (line.substr(colonPos, 3) == "：" ? 3 : 1));
-                    content.erase(0, content.find_first_not_of(" \t\n\r\f\v")); // Trim leading whitespace
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.2f, 1.0f)); // Speaker color
-					ImGui::TextUnformatted(speaker.c_str());
+                ImGui::PopStyleColor();
+            } else {
+                size_t colonPos = line.find("："); 
+                if (colonPos == std::string::npos) colonPos = line.find(":"); 
+                if (colonPos != std::string::npos) {
+                    std::string speaker = line.substr(0, colonPos);
+                    std::string content = line.substr(colonPos + (line.substr(colonPos, 3) == "：" ? 3 : 1)); 
+                    content.erase(0, content.find_first_not_of(" \t\n\r\f\v"));
+                    
+                    // Enhanced speaker name styling
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f)); // Brighter yellow
+                    ImGui::TextUnformatted(speaker.c_str());
                     ImGui::PopStyleColor();
-					ImGui::SameLine();
-					ImGui::TextWrapped("%s", content.c_str());
-				} else {
-					ImGui::TextWrapped("%s", line.c_str());
-				}
-			}
-            ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight() * 0.3f)); // Small spacing between lines
-		}
-        // Auto-scroll to bottom
+                    ImGui::SameLine();
+                    ImGui::TextWrapped("%s", content.c_str());
+                } else {
+                    ImGui::TextWrapped("%s", line.c_str());
+                }
+            }
+            // More spacing between lines for better readability
+            ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight() * 0.4f)); 
+        }
+        
         if (npc.lineIndex == 0 || ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetTextLineHeight() * 2.0f ) {
              ImGui::SetScrollHereY(1.0f);
         }
-		ImGui::EndChild();
-		ImGui::Separator();
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
-
-        // --- Footer with Continue Text, Page Number, and Leave Button ---
-        // Continue Text
-		if (npc.lineIndex < dialog.lines.size() - 1) {
-			ImGui::TextDisabled("按 E 繼續...");
-		} else {
-			ImGui::TextDisabled("按 E 結束...");
-		}
-        ImGui::SameLine(); // Keep "Press E" and other footer items on the same line if possible
-
-        // Calculate positions for Page Number and Leave Button to be on the right
-        const float leaveButtonWidth = 80.0f; // Adjust as needed
-        const float padding = ImGui::GetStyle().FramePadding.x;
-        const float spacing = ImGui::GetStyle().ItemSpacing.x;
-
+        ImGui::EndChild();
+        
+        ImGui::Separator();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y * scaleFactor); 
+        
+        // Status text with enhanced styling
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        if (npc.lineIndex < dialog.lines.size() - 1) {
+            ImGui::Text("按 E 鍵繼續...");
+        } else {
+            ImGui::Text("按 E 鍵結束對話...");
+        }
+        ImGui::PopStyleColor();
+        
+        // Page indicator with larger text
         char page_buf[32];
         snprintf(page_buf, sizeof(page_buf), "(%zu/%zu)", npc.lineIndex + 1, dialog.lines.size());
         ImVec2 pageTextSize = ImGui::CalcTextSize(page_buf);
 
-        // Position Leave Button to the far right
+        // Position Leave Button to the far right with responsive sizing
         float leaveButtonPosX = ImGui::GetWindowContentRegionMax().x - leaveButtonWidth - padding;
         
         // Position Page Number to the left of the Leave Button
         float pageNumPosX = leaveButtonPosX - pageTextSize.x - spacing;
 
-        // Ensure "Press E" text doesn't overlap with page numbers or button
-        // This is a simple check, might need more robust layout for very narrow windows
-        if (ImGui::GetCursorPosX() < pageNumPosX - spacing) {
-             // It's fine, elements are naturally spaced
-        } else {
-            // Not enough space, might need to rethink layout or make button smaller
-            // For now, just let them be placed
-        }
+        ImGui::SameLine(pageNumPosX > ImGui::GetCursorPosX() ? pageNumPosX : 0);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+        ImGui::Text("%s", page_buf);
+        ImGui::PopStyleColor();
 
-        ImGui::SameLine(pageNumPosX > ImGui::GetCursorPosX() ? pageNumPosX : 0); // Move to position for page number
-        ImGui::TextDisabled("%s", page_buf);
-
-        ImGui::SameLine(leaveButtonPosX > ImGui::GetCursorPosX() ? leaveButtonPosX : 0); // Move to position for leave button
-		if (ImGui::Button("離開##DialogLeave", ImVec2(leaveButtonWidth, 0))) { // Using 0 for height makes it default
-			npc.inDialog = false;
+        ImGui::SameLine(leaveButtonPosX > ImGui::GetCursorPosX() ? leaveButtonPosX : 0);
+        
+        // Enhanced leave button styling
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f * scaleFactor);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.4f, 0.4f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+          if (ImGui::Button("離開", ImVec2(leaveButtonWidth, 40 * scaleFactor))) {
+            npc.inDialog = false;
             // Optional: Reset dialog progress or disable the route for this NPC
             // npc.scriptIndex = 0;
             // npc.lineIndex = 0;
-            // npc.routeEnabled = false; // If you want to prevent immediate re-interaction
             if (npc.go) {
                 std::cout << "[DialogSystem] Player left dialog with NPC: " << npc.go->name.data() << std::endl;
             } else {
                 std::cout << "[DialogSystem] Player left dialog with NPC (Unknown GO)." << std::endl;
             }
-            //AudioManager::getInstance().playSoundEffect("ui_cancel_sfx"); // Example sfx
-		}
-<<<<<<< Updated upstream
-=======
-		
-		// Reset font scale before ending window
-		ImGui::SetWindowFontScale(1.0f);
->>>>>>> Stashed changes
-		ImGui::End();
-	}
+        }
+        
+        ImGui::PopStyleColor(3); // Pop button colors
+        ImGui::PopStyleVar(); // Pop frame rounding
+          // Reset font scale before ending window
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    ImGui::End();
 }
 
 void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
 {
-	ImVec2 windowSize(std::min(ImGui::GetIO().DisplaySize.x * 0.7f, 900.0f), ImGui::GetIO().DisplaySize.y * 0.75f);
+    // Get display size for responsive design
+    ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+    float scaleFactor = std::min(displaySize.x / 1920.0f, displaySize.y / 1080.0f);
+    scaleFactor = std::max(scaleFactor, 0.7f); // Higher minimum scale factor for quiz
+    
+    // Much larger quiz window - 90% width and 85% height
+    ImVec2 windowSize(displaySize.x * 0.9f, displaySize.y * 0.85f);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
+    ImGui::SetNextWindowPos(ImVec2(displaySize.x * 0.5f, displaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
 
-	if (ImGui::Begin("##QuizWindow", nullptr, flags)) {
-		ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
-        ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.3f, 1.0f), "問題:");
-		ImGui::Separator(); ImGui::Spacing();
-		ImGui::TextWrapped("%s", quiz.question.c_str());
-		ImGui::PopTextWrapPos(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+    if (ImGui::Begin("##QuizWindow", nullptr, flags)) {
+        // Much larger font scale for quiz text
+        float fontScale = 2.2f * scaleFactor; // Significantly increased font scale
+        ImGui::SetWindowFontScale(fontScale);
+        
+        // Question section with enhanced styling
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
+        ImGui::Text("問題:");
+        ImGui::PopStyleColor();
+        ImGui::Separator(); 
+        ImGui::Spacing();
+        ImGui::Spacing();
+        
+        // Question text with better formatting
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+        ImGui::TextWrapped("%s", quiz.question.c_str());
+        ImGui::PopStyleColor();
+        ImGui::PopTextWrapPos(); 
+        ImGui::Spacing(); 
+        ImGui::Spacing();
+        ImGui::Separator(); 
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-		if (quiz.userIndex == -1) { 
-			ImGui::Text("請選擇你的答案:"); ImGui::Spacing();
-            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 2.0f; 
-			for (size_t i = 0; i < quiz.options.size(); ++i) {
-				if (ImGui::Button(quiz.options[i].c_str(), ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
-					quiz.userIndex = static_cast<int>(i);
-					if (!quiz.v_score.empty() && i < quiz.v_score.size()) {
-						npc.totalScore += quiz.v_score[i];
-					}
-				}
-				ImGui::Spacing();
-			}
-		} else { 
-			ImGui::TextColored(ImVec4(0.2f, 0.8f, 1.0f, 1.0f), "你的選擇:");
-			ImGui::TextWrapped("%s", quiz.options[quiz.userIndex].c_str()); ImGui::Spacing();
-			if (!quiz.feedback.empty() && static_cast<size_t>(quiz.userIndex) < quiz.feedback.size() && !quiz.feedback[quiz.userIndex].empty()) {
-				ImGui::Separator(); ImGui::Spacing();
-				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "回應:");
-				ImGui::TextWrapped("%s", quiz.feedback[quiz.userIndex].c_str()); ImGui::Spacing();
-			}
-			ImGui::Separator(); ImGui::Spacing();
-			ImGui::Text("當前哥布林指數 (目標：<25): %d", npc.totalScore); ImGui::Spacing();
-            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 2.0f;
-			if (ImGui::Button("繼續", ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
+        if (quiz.userIndex == -1) { 
+            // Options selection with larger buttons
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
+            ImGui::Text("請選擇你的答案:"); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 3.5f; // Much larger buttons
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f * scaleFactor);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(15 * scaleFactor, 12 * scaleFactor));
+            
+            for (size_t i = 0; i < quiz.options.size(); ++i) {
+                // Enhanced button styling
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.3f, 0.8f, 0.8f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.4f, 0.9f, 0.9f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.2f, 0.7f, 1.0f));
+                
+                if (ImGui::Button(quiz.options[i].c_str(), ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
+                    quiz.userIndex = static_cast<int>(i);
+                    if (!quiz.v_score.empty() && i < quiz.v_score.size()) {
+                        npc.totalScore += quiz.v_score[i];
+                    }
+                }
+                
+                ImGui::PopStyleColor(3);
+                ImGui::Spacing();
+                ImGui::Spacing();
+            }
+            ImGui::PopStyleVar(2);
+        } else { 
+            // Show selected answer and feedback
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+            ImGui::Text("你的選擇:");
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.6f, 1.0f));
+            ImGui::TextWrapped("%s", quiz.options[quiz.userIndex].c_str()); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Feedback section
+            if (!quiz.feedback.empty() && static_cast<size_t>(quiz.userIndex) < quiz.feedback.size() && !quiz.feedback[quiz.userIndex].empty()) {
+                ImGui::Separator(); 
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.9f, 0.7f, 1.0f));
+                ImGui::Text("回應:");
+                ImGui::PopStyleColor();
+                ImGui::Spacing();
+                ImGui::TextWrapped("%s", quiz.feedback[quiz.userIndex].c_str()); 
+                ImGui::Spacing();
+                ImGui::Spacing();
+            }
+            
+            ImGui::Separator(); 
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Score display
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+            ImGui::Text("當前哥布林指數 (得分越低代表越哥布林): %d", npc.totalScore); 
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            
+            // Continue button with enhanced styling
+            float buttonHeight = ImGui::GetTextLineHeightWithSpacing() * 3.0f;
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f * scaleFactor);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20 * scaleFactor, 15 * scaleFactor));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.7f, 0.3f, 0.8f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.8f, 0.4f, 0.9f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+            
+            if (ImGui::Button("繼續", ImVec2(ImGui::GetContentRegionAvail().x, buttonHeight))) {
 				if (quiz.question.find("選擇你的學習路線") != std::string::npos) {
 					// This 'npc' is the teacher NPC.
 					npc.inDialog = false; 
@@ -525,17 +605,23 @@ void DialogSystem::renderQuiz(Quiz const& quiz, NPC& npc)
                         static_cast<Quiz*>(npc.dialogs[npc.scriptIndex].get())->userIndex = -1;
                     } else if (npc.scriptIndex >= npc.dialogs.size()) {
                         npc.inDialog = false; 
-                    }
-				} else {
-				    npc.scriptIndex++; npc.lineIndex = 0;
+                    }                } else {
+                    npc.scriptIndex++; npc.lineIndex = 0;
                     if (npc.scriptIndex < npc.dialogs.size() && npc.dialogs[npc.scriptIndex] && npc.dialogs[npc.scriptIndex]->type == DialogType::QUIZ) {
                         static_cast<Quiz*>(npc.dialogs[npc.scriptIndex].get())->userIndex = -1;
                     }
                 }
-			}
-		}
-		ImGui::End();
-	}
+            }
+            
+            // Clean up button styling
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(2);
+        }
+        
+        // Reset font scale before ending window
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    ImGui::End();
 }
 
 void DialogSystem::renderEnding(Dialog const& ending, NPC& npc, bool isGoodEnding)

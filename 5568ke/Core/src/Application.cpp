@@ -35,7 +35,12 @@ void Application::initWindow_()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window_ = glfwCreateWindow(1920, 1080, "教室的割布麟", nullptr, nullptr);
+	// Get primary monitor and its video mode for fullscreen
+	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+	
+	// Create fullscreen window
+	window_ = glfwCreateWindow(mode->width, mode->height, "教室的割布麟", primaryMonitor, nullptr);
 	glfwMakeContextCurrent(window_);
 	glfwSwapInterval(1);
 
@@ -52,6 +57,7 @@ void Application::initImGui_() { ImGuiManagerRef.init(window_); }
 void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (!app) return;
 
 	if (key >= 0 && key < 1024) {
 		if (action == GLFW_PRESS)
@@ -60,15 +66,31 @@ void Application::keyCallback_(GLFWwindow* window, int key, int scancode, int ac
 			app->keys_[key] = false;
 	}
 
-	if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
-		int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
-		if (cursorMode == GLFW_CURSOR_NORMAL) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			Camera& cam = app->sceneRef.cam;
-			cam.firstMouse = true;
-		}
-		else {
+	// ESC to toggle main menu (only if not in main menu already)
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+		if (app->mainMenuRef.isVisible()) {
+			// If main menu is visible, exit game
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+		} else {
+			// Show main menu
+			app->mainMenuRef.show();
+			// Reset cursor mode when returning to menu
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+	}
+
+	if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+		// Only allow tab switching when not in main menu
+		if (!app->mainMenuRef.isVisible()) {
+			int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
+			if (cursorMode == GLFW_CURSOR_NORMAL) {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				Camera& cam = app->sceneRef.cam;
+				cam.firstMouse = true;
+			}
+			else {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
 		}
 	}
 
@@ -210,11 +232,13 @@ void Application::setupDefaultScene_()
 				}
 			}
 		}
-
 		if (teacherGO) {
 			initBegin(teacherGO);
 			std::cout << "[Application] Dialog system initialized with teacher and character routes" << std::endl;
 		}
+
+		// Add invisible walls around the classroom
+		addInvisibleWalls_();
 
 	} catch (std::runtime_error const& error) {
 		std::cerr << "[Application::setupDefaultScene_] Exception: " << error.what() << std::endl;
@@ -358,6 +382,10 @@ void Application::render_()
 void Application::loop_()
 {
 	prevTime_ = glfwGetTime();
+	
+	// Ensure main menu is shown at start
+	mainMenuRef.show();
+	
 	while (!glfwWindowShouldClose(window_)) {
 		double now = glfwGetTime();
 		float dt = static_cast<float>(now - prevTime_);
@@ -367,8 +395,40 @@ void Application::loop_()
 		if (dt > 0.1f) dt = 0.1f;     // Clamp dt to prevent instability from large frame drops
 
 		glfwPollEvents(); // Poll events first
-		tick_(dt);        // Update game state
-		render_();        // Render the scene and UI
+		
+		// Handle main menu
+		if (mainMenuRef.isVisible()) {
+			mainMenuRef.processInput(window_);
+			
+			// Only render main menu, skip game logic
+			int w, h;
+			glfwGetFramebufferSize(window_, &w, &h);
+			if (w > 0 && h > 0) {
+				rendererRef.beginFrame(w, h, {0.05f, 0.05f, 0.1f}); // Darker background for menu
+				rendererRef.endFrame();
+				
+				ImGuiManagerRef.newFrame();
+				mainMenuRef.render();
+				ImGuiManagerRef.render();
+				
+				glfwSwapBuffers(window_);
+			}
+			
+			// Check if user wants to exit or start game
+			if (mainMenuRef.shouldExit()) {
+				glfwSetWindowShouldClose(window_, GLFW_TRUE);
+			} else if (mainMenuRef.shouldStartGame()) {
+				mainMenuRef.resetStartGame();
+				// Game starts, main menu is already hidden
+				// Set cursor to disabled for game play
+				glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				sceneRef.cam.firstMouse = true;
+			}
+		} else {
+			// Normal game loop
+			tick_(dt);        // Update game state
+			render_();        // Render the scene and UI
+		}
 	}
 }
 
@@ -382,4 +442,57 @@ void Application::cleanup_()
 		window_ = nullptr;
 	}
 	glfwTerminate();
+}
+
+void Application::addInvisibleWalls_()
+{	// Classroom is positioned at {8.4f, 0.0f, 7.0f} with scale 2.6f
+	// Need to match the actual classroom model dimensions more precisely
+	glm::vec3 classroomCenter = {8.4f, 0.0f, 7.0f};
+	float classroomSize = 16.0f; // Better match for scaled classroom (original * 2.6 scale factor)
+	float wallThickness = 0.2f;  // Thinner walls for more precise boundaries
+	float wallHeight = 8.0f;     // Taller for better coverage
+	
+	// Create invisible wall GameObjects with static physics properties
+	auto createWall = [&](const std::string& name, glm::vec3 pos, glm::vec3 scale) {
+		auto wallGO = std::make_shared<GameObject>();
+		wallGO->name = name;
+		wallGO->position = pos;
+		wallGO->scale = scale;
+		wallGO->visible = false;  // Make invisible
+		wallGO->invMass = 0.0f;   // Static object (infinite mass)
+		wallGO->restitution = 0.1f; // Low bounce
+		wallGO->updateTransformMatrix();
+				// Add to scene
+		sceneRef.gameObjects.push_back(wallGO);
+		
+		// Create and add collider
+		auto wallCollider = std::make_shared<AABBCollider>(wallGO);
+		collisionSysRef.add(wallCollider);
+		
+		std::cout << "[Application] Added invisible wall: " << name << " at position (" 
+		          << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+	};
+	
+	// Create walls around the classroom
+	// North wall (positive Z)
+	createWall("wall_north", 
+		{classroomCenter.x, wallHeight * 0.5f, classroomCenter.z + classroomSize * 0.5f + wallThickness * 0.5f},
+		{classroomSize + wallThickness * 2.0f, wallHeight, wallThickness});
+	
+	// South wall (negative Z) 
+	createWall("wall_south",
+		{classroomCenter.x, wallHeight * 0.5f, classroomCenter.z - classroomSize * 0.5f - wallThickness * 0.5f},
+		{classroomSize + wallThickness * 2.0f, wallHeight, wallThickness});
+	
+	// East wall (positive X)
+	createWall("wall_east",
+		{classroomCenter.x + classroomSize * 0.5f + wallThickness * 0.5f, wallHeight * 0.5f, classroomCenter.z},
+		{wallThickness, wallHeight, classroomSize});
+	
+	// West wall (negative X)
+	createWall("wall_west",
+		{classroomCenter.x - classroomSize * 0.5f - wallThickness * 0.5f, wallHeight * 0.5f, classroomCenter.z},
+		{wallThickness, wallHeight, classroomSize});
+	
+	std::cout << "[Application] Added 4 invisible walls around classroom" << std::endl;
 }
